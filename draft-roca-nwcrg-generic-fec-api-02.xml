@@ -281,6 +281,7 @@ typedef enum {
 typedef enum {
 	GA_ERRNO_NIL = 0,
 	GA_ERRNO_CODEPOINT_NOT_SUPPORTED,
+	/* and many more... */
 } ga_errno_t;
 
 <CODE ENDS>
