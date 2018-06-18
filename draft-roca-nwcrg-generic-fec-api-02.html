@@ -380,8 +380,9 @@
 <link href="#rfc.section.3.1" rel="Chapter" title="3.1 Mechanisms Considered or Ignored by the API"/>
 <link href="#rfc.section.4" rel="Chapter" title="4 Generic API for Sliding Window FEC Codes"/>
 <link href="#rfc.section.4.1" rel="Chapter" title="4.1 General Definitions Common to the Encoder and Decoder"/>
-<link href="#rfc.section.4.2" rel="Chapter" title="4.2 Encoder"/>
-<link href="#rfc.section.4.3" rel="Chapter" title="4.3 Decoder"/>
+<link href="#rfc.section.4.2" rel="Chapter" title="4.2 Functions Common to the Encoder and Decoder"/>
+<link href="#rfc.section.4.3" rel="Chapter" title="4.3 Encoder"/>
+<link href="#rfc.section.4.4" rel="Chapter" title="4.4 Decoder"/>
 <link href="#rfc.section.5" rel="Chapter" title="5 Security Considerations"/>
 <link href="#rfc.section.6" rel="Chapter" title="6 IANA Considerations"/>
 <link href="#rfc.section.7" rel="Chapter" title="7 Acknowledgments"/>
@@ -492,8 +493,9 @@
 <li>3.1.   <a href="#rfc.section.3.1">Mechanisms Considered or Ignored by the API</a></li>
 <li>4.   <a href="#rfc.section.4">Generic API for Sliding Window FEC Codes</a></li>
 <li>4.1.   <a href="#rfc.section.4.1">General Definitions Common to the Encoder and Decoder</a></li>
-<li>4.2.   <a href="#rfc.section.4.2">Encoder</a></li>
-<li>4.3.   <a href="#rfc.section.4.3">Decoder</a></li>
+<li>4.2.   <a href="#rfc.section.4.2">Functions Common to the Encoder and Decoder</a></li>
+<li>4.3.   <a href="#rfc.section.4.3">Encoder</a></li>
+<li>4.4.   <a href="#rfc.section.4.4">Decoder</a></li>
 <li>5.   <a href="#rfc.section.5">Security Considerations</a></li>
 <li>6.   <a href="#rfc.section.6">IANA Considerations</a></li>
 <li>7.   <a href="#rfc.section.7">Acknowledgments</a></li>
@@ -651,7 +653,72 @@ typedef enum {
 &lt;CODE ENDS&gt;
 </pre>
 <p class="figure">General definitions.</p>
-<h1 id="rfc.section.4.2"><a href="#rfc.section.4.2">4.2.</a> Encoder</h1>
+<h1 id="rfc.section.4.2"><a href="#rfc.section.4.2">4.2.</a> Functions Common to the Encoder and Decoder</h1>
+<pre>
+&lt;CODE BEGINS&gt;
+
+/** 
+ * The following functions enable an encoder (resp. decoder) to
+ * initialize the set of coefficients to be used for encoding
+ * or received along with a repair symbol.
+ * Encoder: one of them MUST be used before build_repair_symbol().
+ * Decoder: one of them MUST be used before decode_with_new_repair_symbol().
+ */
+
+
+/**
+ * Encoder: this function specifies the coding coefficients chosen by
+ *	the application if this is the way the codec works.
+ * Decoder: communicate the coding coefficients associated to a repair
+ *	symbol and carried in the packet header.
+ *
+ * @param ses
+ * @param coding_coefs_tab      (IN) table of coding coefficients to be associated to each of the source symbols
+ *                              currently in the coding window. The size (number of bits) of each coefficient
+ *                              depends on the FEC scheme. The allocation and release of this table is under the
+ *                              responsibility of the application.
+ * @param nb_coefs_in_tab       (IN) number of entries (i.e., coefficients) in the table.
+ * @return
+ */
+ga_status_t ga_set_coding_coefficients_tab (
+                                         void*          coding_coefs_tab,
+                                         UINT32         nb_coefs_in_tab);
+
+/**
+* SENDER:   this function enables the application to retrieve the set of coding coefficients generated and used by
+*      build_repair_symbol().
+* RECEIVER: never used.
+*
+* @param ses
+* @param coding_coefs_tab      (IN/OUT) pointer of a table of coding coefficients to be associated to each of the
+*                              source symbols currently in the coding window. The size (number of bits) of each
+*                              coefficient depends on the FEC scheme. The allocation and release of this table is
+*                              under the responsibility of the application. Upon return of this function, this
+*                              table is allocated and filled with each coefficient value.
+* @param nb_coefs_in_tab       (IN/OUT) pointer to the number of entries (i.e., coefficients) in the table.
+*                              Upon calling this function, this number must be zero. Upon return of this function
+*                              this number is initialized with the actual number of entries in the coeffs_tab[].
+* @return 
+*/
+ga_status_t     ga_get_coding_coefficients_tab (
+                                         void**         coding_coefs_tab,
+                                         UINT32*        nb_coefs_in_tab);
+
+/**
+* The coding coefficients may be generated in a deterministic manner, (e.g., through the use of a PRNG and the
+* repair symbol ESI used as a seed).
+*
+* @param ses
+* @param params                (IN) pointer to a codec specific structure containing the required parameters.
+*                              These parameters can include a repair symbol ESI or key among other things.
+* @return
+*/
+ga_status_t     ga_generate_coding_coefficients (
+                                          void*          params);
+&lt;CODE ENDS&gt;
+</pre>
+<p class="figure">Common functions.</p>
+<h1 id="rfc.section.4.3"><a href="#rfc.section.4.3">4.3.</a> Encoder</h1>
 <pre>
 &lt;CODE BEGINS&gt;
 /**
@@ -731,7 +798,7 @@ ga_status_t ga_encoder_set_callback_functions (ga_encoder_t*	enc,
  *			the object pointed is FEC codec ID specific.
  * @return
  */
-ga_status_t gfa_encoder_set_parameters (ga_encoder_t*	enc,
+ga_status_t ga_encoder_set_parameters  (ga_encoder_t*	enc,
 					uint32_t	type,
 					uint32_t	length,
 					void*		value);
@@ -751,7 +818,7 @@ ga_status_t gfa_encoder_set_parameters (ga_encoder_t*	enc,
  *			object buffer.
  * @return
  */
-ga_status_t ga_encoder_get_parameter (ga_encoder_t*	enc,
+ga_status_t ga_encoder_get_parameters  (ga_encoder_t*	enc,
 					uint32_t	type,
 					uint32_t	length,
 					void*		value);
@@ -760,24 +827,26 @@ ga_status_t ga_encoder_get_parameter (ga_encoder_t*	enc,
  * List here the FEC codec specific control parameters.
  */
 enum {
-	GA_ENCODER_ADD_PARAM_ENCODING_STATISTICS = 1,	/* for instance... */
+	GA_ENCODER_GET_PARAM_STATISTICS = 1,	/* for instance... */
+	GA_ENCODER_SET_PARAM_RLC_DENSITY_THRESHOLD,
 };
 
 
 /**
  * Create a single repair symbol (i.e. perform an encoding).
  *
- * @param new_repair_symbol_buf (IN) The pointer to the buffer for the repair symbol to build can either point to a buffer
- *                              allocated by the application, or let to NULL meaning that this function will allocate
- *                              memory.
- * @return                      Completion status.
+ * @param new_buf	(IN) The pointer to the buffer for the repair
+ *			symbol to build can either point to a buffer
+ *			allocated by the application, or let to NULL
+ *			meaning that this function will allocate memory.
+ * @return
  */
 ga_status_t ga_build_repair_symbol (ga_encoder_t*	enc,
-				    void*		new_repair_symbol_buf);
+				    void*		new_buf);
 &lt;CODE ENDS&gt;
 </pre>
 <p class="figure">Encoder API proposal</p>
-<h1 id="rfc.section.4.3"><a href="#rfc.section.4.3">4.3.</a> Decoder</h1>
+<h1 id="rfc.section.4.4"><a href="#rfc.section.4.4">4.4.</a> Decoder</h1>
 <pre>
 &lt;CODE BEGINS&gt;
 
