@@ -204,12 +204,12 @@ The following mechanisms are **within scope of the API**:
 	</section>
 
 
-	<section anchor="genericAPI" title="Generic Sliding Window API (GSA)">
+	<section anchor="genericAPI" title="Generic API for Sliding Window FEC Codes">
 	<!-- ====================== -->
 
 <t>
 The following sections describe the generic API, following a C-language formalism.
-Everything is prefixed by "gsa" (Generic Sliding window API).
+Everything is prefixed by "ga" (Generic API).
 <!--
 The API is organized as follows, around several topics:
 <list style="symbols">
@@ -232,18 +232,19 @@ The API is organized as follows, around several topics:
 /**
  * Return value of any function.
  *
- * GSA_STATUS_OK = 0	Success
- * GSA_STATUS_FAILURE	Failure. The function called did not succeed to
+ * GA_STATUS_OK = 0	Success
+ * GA_STATUS_FAILURE	Failure. The function called did not succeed to
  *			perform its task, however this is not an error
  *			(e.g., it happens when decoding fails).
- * GSA_STATUS_ERROR	Generic error type. The detailed error type is
- *			stored in the errno variable of gsa_encoder_t/gsa_decoder_t.
+ * GA_STATUS_ERROR	Generic error type. The detailed error type is
+ *			stored in the errno variable of ga_encoder_t and
+ *			ga_decoder_t structures.
  */
 typedef enum {
-        GSA_STATUS_OK = 0,
-        GSA_STATUS_FAILURE,
-        GSA_STATUS_ERROR
-} gsa_status_t;
+        GA_STATUS_OK = 0,
+        GA_STATUS_FAILURE,
+        GA_STATUS_ERROR
+} ga_status_t;
 
 
 /**
@@ -263,24 +264,24 @@ typedef enum {
  * optimisation, and then several codepoints will exist for them.
  */
 typedef enum {
-	NULL_CODEPOINT = 0,	/* codepoint 0 is reserved */
+	GA_NULL_CODEPOINT = 0,	/* codepoint 0 is reserved */
 		/* NB: FEC Encoding ID 12 is not yet allocated. May change... */
-	FECFRAME_RLC_FEC_ENC_ID_12_GF_256,
+	GA_FECFRAME_RLC_FEC_ENC_ID_12_GF_256,
 		/* NB: FEC Encoding ID 12 is not yet allocated. May change... */
-	FECFRAME_RLC_FEC_ENC_ID_13_GF_2,
-		/* FEC Encoding ID  2 is not yet allocated. May change... */
-	QUIC_RLC_GF_256_FECENCID_2,
+	GA_FECFRAME_RLC_FEC_ENC_ID_13_GF_2,
+		/* NB: FEC Encoding ID  2 is not yet allocated. May change... */
+	GA_QUIC_RLC_GF_256_FECENCID_2,
 	/* list here other identifiers for any FEC codec of interest. */
-} gsa_codepoint_t;
+} ga_codepoint_t;
 
 
 /**
  * Possible error causes.
  */
 typedef enum {
-	GSA_ERRNO_NIL = 0,
-	GSA_ERRNO_CODEPOINT_NOT_SUPPORTED,
-} gsa_errno_t;
+	GA_ERRNO_NIL = 0,
+	GA_ERRNO_CODEPOINT_NOT_SUPPORTED,
+} ga_errno_t;
 
 <CODE ENDS>
 ]]></artwork>
@@ -298,55 +299,80 @@ typedef enum {
  * Encoder structure that contains whatever is needed for encoding.
  * The content of this structure is FEC code dependant and is not defined here.
  */
-typedef struct gsa_encoder {
+typedef struct ga_encoder {
 	/* codec instance identifier */
 	uint32_t	id;
 
-	/* when a function returns with GSA_STATUS_ERROR, the errno variable
+	/* when a function returns with GA_STATUS_ERROR, the errno variable
 	 * contains a more detailed error type. */
-	gsa_errno_t	errno;
+	ga_errno_t	errno;
 
 	/* add whatever is needed hereafter... */
-} gsa_encoder_t;
+} ga_encoder_t;
 
 
 /**
- * @brief Create and initialize an encoder, providing parameters
- *	that are guaranted not to change over the codec lifetime.
+ * @brief Create and initialize an encoder, providing key parameters.
  * @param codepoint	opaque identifier that fully identifies the FEC
  *			code to use.
  * @param verbosity	print information on the codec processing.
  *			0 is the minimum verbosity, the maximum verbosity
  *			level is implementation specific.
- * @param symbol_size
+ * @param symbol_size	source and repair symbol size in bytes. Cannot
+ *			change during the codec instance lifetime.
  * @param max_encoding_window_size
- * @return		pointer to a gsa_encoder_t structure if okay, or
+ * @return		pointer to a ga_encoder_t structure if okay, or
  *			NULL in case of error.
  **/
-gsa_encoder_t* gsa_encoder_create (gsa_codepoing_t	codepoint,
-				   uint32_t		verbosity,
-				   uint32_t		symbol_size,
-				   uint32_t		max_encoding_window_size);
+ga_encoder_t* ga_encoder_create (ga_codepoint_t	codepoint,
+				 uint32_t	verbosity,
+				 uint32_t	symbol_size,
+				 uint32_t	max_encoding_window_size);
 
 /**
  * @brief Release an encoder and its associated ressources.
  * @param encoder
  **/
-gsa_status_t gsa_encoder_release (gsa_encoder_t*	encoder);
+ga_status_t ga_encoder_release (ga_encoder_t*	enc);
+
+
+/**
+ * @brief Set the various callback functions for this encoder.
+ * All the callback functions require an opaque context parameter, that must be
+ * initialized accordingly by the application, since it is application specific.
+ *
+ * @param enc
+ * @param source_symbol_removed_from_coding_window_callback
+ *		(IN) Pointer to the function, within the application, that
+ *		needs to be called each time a source symbol is removed from
+ *		the left side of the coding window, because this window has
+ *		slided to the right.
+ *		old source symbol is now forgotten.
+ * @param context_4_callback
+ *		(IN) Pointer to the application-specific context that will be
+ *		passed to the callback function (if any). This context is not
+ *		interpreted by this function.
+ * @return
+ */
+ga_status_t ga_encoder_set_callback_functions (ga_encoder_t*	enc,
+		void (*source_symbol_removed_from_coding_window_callback)
+					(void*		context,
+					 uint32_t	old_symbol_esi),
+			void* context_4_callback);
 
 
 /**
  * @brief This function sets a FEC codec specific control parameter, or
  *	several parameters at once, using a type/length/value approach.
  *
- * @param encoder
- * @param type		(IN) Type of parameter. This type is FEC codec ID specific.
- * @param length	(IN) length of pointer value
- * @param value		(IN) Pointer to the value of the parameter. The type of the object pointed
- *			is FEC codec ID specific.
+ * @param enc
+ * @param type		(IN) Type of parameter.
+ * @param length	(IN) length of the pointed value.
+ * @param value		(IN) Pointer to the value. The exact type of
+ *			the object pointed is FEC codec ID specific.
  * @return
  */
-gsa_status_t gsa_encoder_set_parameters (gsa_encoder_t*	encoder,
+ga_status_t gfa_encoder_set_parameters (ga_encoder_t*	enc,
 					uint32_t	type,
 					uint32_t	length,
 					void*		value);
@@ -355,16 +381,18 @@ gsa_status_t gsa_encoder_set_parameters (gsa_encoder_t*	encoder,
  * @brief This function gets a FEC codec specific control parameter, or
  *	several parameters at once, using a type/length/value approach.
  *
- * @param encoder
- * @param type		(IN) Type of parameter. This type is FEC codec ID specific.
- * @param length	(IN) length of pointer value
- * @param value		(IN/OUT) Pointer to the value of the parameter. The type of the object
- *			pointed is FEC codec ID specific. This function updates the value object
- *			accordingly. The application, who knows the FEC codec ID, is responsible
- *			to allocating the appropriate object pointed by the value pointer.
+ * @param enc
+ * @param type		(IN) Type of parameter.
+ * @param length	(IN) length of the pointed value.
+ * @param value		(IN/OUT) Pointer to the value. The exact type of
+ *			the object pointed is FEC codec ID specific.
+ *			This function updates the value object
+ *			accordingly. The caller, who knows the FEC codec
+ *			ID, is responsible to allocate the appropriate
+ *			object buffer.
  * @return
  */
-gsa_status_t gsa_encoder_get_parameter (gsa_encoder_t*	encoder,
+ga_status_t ga_encoder_get_parameter (ga_encoder_t*	enc,
 					uint32_t	type,
 					uint32_t	length,
 					void*		value);
@@ -373,7 +401,7 @@ gsa_status_t gsa_encoder_get_parameter (gsa_encoder_t*	encoder,
  * List here the FEC codec specific control parameters.
  */
 enum {
-	GSA_ENCODER_ADD_PARAM_ENCODING_STATISTICS = 1,	/* for instance... */
+	GA_ENCODER_ADD_PARAM_ENCODING_STATISTICS = 1,	/* for instance... */
 };
 
 
@@ -385,8 +413,8 @@ enum {
  *                              memory.
  * @return                      Completion status.
  */
-gsa_status_t gsa_build_repair_symbol (gsa_encoder_t*	encoder,
-				      void*		new_repair_symbol_buf);
+ga_status_t ga_build_repair_symbol (ga_encoder_t*	enc,
+				    void*		new_repair_symbol_buf);
 <CODE ENDS>
 ]]></artwork>
 </figure>
