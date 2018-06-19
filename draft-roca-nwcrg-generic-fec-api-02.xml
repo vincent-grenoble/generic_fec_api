@@ -290,7 +290,7 @@ typedef enum {
 
 		</section>
 
-		<section title="Functions Common to the Encoder and Decoder">
+		<section title="Coding Coefficients Functions">
 		<!-- ================ -->
 
 <figure title="Common functions.">
@@ -313,48 +313,64 @@ typedef enum {
  *	symbol and carried in the packet header.
  *
  * @param ses
- * @param coding_coefs_tab      (IN) table of coding coefficients to be associated to each of the source symbols
- *                              currently in the coding window. The size (number of bits) of each coefficient
- *                              depends on the FEC scheme. The allocation and release of this table is under the
- *                              responsibility of the application.
- * @param nb_coefs_in_tab       (IN) number of entries (i.e., coefficients) in the table.
+ * @param coding_coefs_tab
+ *		(IN) table of coding coefficients associated to each of
+ *		the source symbols currently in the encoding window.
+ *		The size (number of bits) of each coefficient depends on
+ *		the FEC Scheme. The allocation and release of this table
+ *		is under the responsibility of the application.
+ * @param nb_coefs_in_tab      
+ *		(IN) number of entries (i.e., coefficients) in the table.
  * @return
  */
-ga_status_t ga_set_coding_coefficients_tab (
-                                         void*          coding_coefs_tab,
-                                         UINT32         nb_coefs_in_tab);
+ga_status_t ga_encoder_set_encoding_coeffs_tab (
+					ga_encoder_t*	enc,
+					void*		coding_coefs_tab,
+					uint32_t	nb_coefs_in_tab);
+
+ga_status_t ga_decoder_set_encoding_coeffs_tab (
+					ga_decoder_t*	dec,
+					void*		coding_coefs_tab,
+					uint32_t	nb_coefs_in_tab);
 
 /**
-* SENDER:   this function enables the application to retrieve the set of coding coefficients generated and used by
-*      build_repair_symbol().
-* RECEIVER: never used.
-*
-* @param ses
-* @param coding_coefs_tab      (IN/OUT) pointer of a table of coding coefficients to be associated to each of the
-*                              source symbols currently in the coding window. The size (number of bits) of each
-*                              coefficient depends on the FEC scheme. The allocation and release of this table is
-*                              under the responsibility of the application. Upon return of this function, this
-*                              table is allocated and filled with each coefficient value.
-* @param nb_coefs_in_tab       (IN/OUT) pointer to the number of entries (i.e., coefficients) in the table.
-*                              Upon calling this function, this number must be zero. Upon return of this function
-*                              this number is initialized with the actual number of entries in the coeffs_tab[].
-* @return 
-*/
-ga_status_t     ga_get_coding_coefficients_tab (
-                                         void**         coding_coefs_tab,
-                                         UINT32*        nb_coefs_in_tab);
+ * SENDER:   this function enables the application to retrieve the set of
+ * coding coefficients generated and used by build_repair_symbol().
+ *      build_repair_symbol().
+ * RECEIVER: never used.
+ *
+ * @param ses
+ * @param coding_coefs_tab
+ *		(IN/OUT) pointer to a table of coding coefficients.
+ *		The size (number of bits) of each coefficient depends on
+ *		the FEC scheme.	Upon return of this function, this table
+ *		is allocated and filled with coefficient values. The
+ *		release of this table is under the responsibility of the
+ *		application.
+ * @param nb_coefs_in_tab      
+ *		(IN/OUT) pointer to the number of entries (i.e.,
+ *		coefficients) in the table.
+ *		Upon calling this function, this number must be zero.
+ *		Upon return of this function this variable is initialized
+ *		with the actual number of entries in the coeffs_tab[].
+ * @return 
+ */
+ga_status_t     ga_encoder_get_coding_coefficients_tab (
+					ga_encoder_t*	enc,
+					void**		coding_coefs_tab,
+					uint32_t*	nb_coefs_in_tab);
 
 /**
 * The coding coefficients may be generated in a deterministic manner, (e.g., through the use of a PRNG and the
 * repair symbol ESI used as a seed).
 *
 * @param ses
-* @param params                (IN) pointer to a codec specific structure containing the required parameters.
-*                              These parameters can include a repair symbol ESI or key among other things.
-* @return
-*/
-ga_status_t     ga_generate_coding_coefficients (
-                                          void*          params);
+ * @param params                (IN) pointer to a codec specific structure containing the required parameters.
+ *                              These parameters can include a repair symbol ESI or key among other things.
+ * @return
+ */
+ga_status_t     ga_generate_coding_coefficients (ga_encoder_t*	enc,
+						 void*		other_params);
 <CODE ENDS>
 ]]></artwork>
 </figure>
@@ -430,18 +446,17 @@ ga_status_t ga_encoder_set_callback_functions (ga_encoder_t*	enc,
 		void (*source_symbol_removed_from_coding_window_callback)
 					(void*		context,
 					 uint32_t	old_symbol_esi),
-			void* context_4_callback);
-
+		void* context_4_callback);
 
 /**
- * @brief This function sets a FEC codec specific control parameter, or
- *	several parameters at once, using a type/length/value approach.
+ * @brief This function sets one or more FEC codec specific parameters,
+ *	using a type/length/value approach for maximum flexibility.
  *
  * @param enc
  * @param type		(IN) Type of parameter.
  * @param length	(IN) length of the pointed value.
  * @param value		(IN) Pointer to the value. The exact type of
- *			the object pointed is FEC codec ID specific.
+ *			the object pointed is FEC codec specific.
  * @return
  */
 ga_status_t ga_encoder_set_parameters  (ga_encoder_t*	enc,
@@ -450,17 +465,17 @@ ga_status_t ga_encoder_set_parameters  (ga_encoder_t*	enc,
 					void*		value);
 
 /**
- * @brief This function gets a FEC codec specific control parameter, or
- *	several parameters at once, using a type/length/value approach.
+ * @brief This function gets one or more FEC codec specific parameters,
+ *	using a type/length/value approach for maximum flexibility.
  *
  * @param enc
  * @param type		(IN) Type of parameter.
  * @param length	(IN) length of the pointed value.
  * @param value		(IN/OUT) Pointer to the value. The exact type of
- *			the object pointed is FEC codec ID specific.
+ *			the object pointed is FEC codec specific.
  *			This function updates the value object
- *			accordingly. The caller, who knows the FEC codec
- *			ID, is responsible to allocate the appropriate
+ *			accordingly. The caller, who knows the FEC codec,
+ *			is responsible to allocate the appropriate
  *			object buffer.
  * @return
  */

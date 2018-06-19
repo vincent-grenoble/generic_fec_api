@@ -5,12 +5,12 @@
 NWCRG                                                      V. Roca (Ed.)
 Internet-Draft                                                     INRIA
 Intended status: Informational                               J. Detchart
-Expires: December 20, 2018                                ISAE - Supaero
+Expires: December 21, 2018                                ISAE - Supaero
                                                                 C. Adjih
                                                                    INRIA
                                                              M. Pedersen
                                                            Steinwurf ApS
-                                                           June 18, 2018
+                                                           June 19, 2018
 
 
  Generic Application Programming Interface (API) for Sliding Window FEC
@@ -49,11 +49,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on December 20, 2018.
+   This Internet-Draft will expire on December 21, 2018.
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 1]
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 1]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -81,14 +81,14 @@ Table of Contents
      3.1.  Mechanisms Considered or Ignored by the API . . . . . . .   5
    4.  Generic API for Sliding Window FEC Codes  . . . . . . . . . .   6
      4.1.  General Definitions Common to the Encoder and Decoder . .   6
-     4.2.  Functions Common to the Encoder and Decoder . . . . . . .   7
-     4.3.  Encoder . . . . . . . . . . . . . . . . . . . . . . . . .   8
+     4.2.  Coding Coefficients Functions . . . . . . . . . . . . . .   7
+     4.3.  Encoder . . . . . . . . . . . . . . . . . . . . . . . . .   9
      4.4.  Decoder . . . . . . . . . . . . . . . . . . . . . . . . .  11
-   5.  Security Considerations . . . . . . . . . . . . . . . . . . .  11
-   6.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  11
-   7.  Acknowledgments . . . . . . . . . . . . . . . . . . . . . . .  11
-   8.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  11
-     8.1.  Normative References  . . . . . . . . . . . . . . . . . .  11
+   5.  Security Considerations . . . . . . . . . . . . . . . . . . .  12
+   6.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  12
+   7.  Acknowledgments . . . . . . . . . . . . . . . . . . . . . . .  12
+   8.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  12
+     8.1.  Normative References  . . . . . . . . . . . . . . . . . .  12
      8.2.  Informative References  . . . . . . . . . . . . . . . . .  12
    Appendix A.  Existing APIs  . . . . . . . . . . . . . . . . . . .  13
      A.1.  Morten API proposal . . . . . . . . . . . . . . . . . . .  13
@@ -109,7 +109,7 @@ Table of Contents
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 2]
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 2]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -165,7 +165,7 @@ Internet-Draft                 Generic API                     June 2018
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 3]
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 3]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -221,7 +221,7 @@ Internet-Draft                 Generic API                     June 2018
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 4]
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 4]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -277,7 +277,7 @@ Internet-Draft                 Generic API                     June 2018
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 5]
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 5]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -333,7 +333,7 @@ typedef enum {
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 6]
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 6]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -350,13 +350,14 @@ Internet-Draft                 Generic API                     June 2018
 typedef enum {
     GA_ERRNO_NIL = 0,
     GA_ERRNO_CODEPOINT_NOT_SUPPORTED,
+    /* and many more... */
 } ga_errno_t;
 
 <CODE ENDS>
 
                            General definitions.
 
-4.2.  Functions Common to the Encoder and Decoder
+4.2.  Coding Coefficients Functions
 
 <CODE BEGINS>
 
@@ -376,55 +377,80 @@ typedef enum {
  *  symbol and carried in the packet header.
  *
  * @param ses
- * @param coding_coefs_tab      (IN) table of coding coefficients to be associated to each of the source symbols
- *                              currently in the coding window. The size (number of bits) of each coefficient
- *                              depends on the FEC scheme. The allocation and release of this table is under the
- *                              responsibility of the application.
- * @param nb_coefs_in_tab       (IN) number of entries (i.e., coefficients) in the table.
+ * @param coding_coefs_tab
+ *      (IN) table of coding coefficients associated to each of
+ *      the source symbols currently in the encoding window.
+ *      The size (number of bits) of each coefficient depends on
+ *      the FEC Scheme. The allocation and release of this table
+ *      is under the responsibility of the application.
+ * @param nb_coefs_in_tab
+ *      (IN) number of entries (i.e., coefficients) in the table.
  * @return
- */
-ga_status_t ga_set_coding_coefficients_tab (
-                                         void*          coding_coefs_tab,
-                                         UINT32         nb_coefs_in_tab);
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 7]
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 7]
 
 Internet-Draft                 Generic API                     June 2018
 
 
+ */
+ga_status_t ga_encoder_set_encoding_coeffs_tab (
+                    ga_encoder_t*   enc,
+                    void*       coding_coefs_tab,
+                    uint32_t    nb_coefs_in_tab);
+
+ga_status_t ga_decoder_set_encoding_coeffs_tab (
+                    ga_decoder_t*   dec,
+                    void*       coding_coefs_tab,
+                    uint32_t    nb_coefs_in_tab);
+
 /**
-* SENDER:   this function enables the application to retrieve the set of coding coefficients generated and used by
-*      build_repair_symbol().
-* RECEIVER: never used.
-*
-* @param ses
-* @param coding_coefs_tab      (IN/OUT) pointer of a table of coding coefficients to be associated to each of the
-*                              source symbols currently in the coding window. The size (number of bits) of each
-*                              coefficient depends on the FEC scheme. The allocation and release of this table is
-*                              under the responsibility of the application. Upon return of this function, this
-*                              table is allocated and filled with each coefficient value.
-* @param nb_coefs_in_tab       (IN/OUT) pointer to the number of entries (i.e., coefficients) in the table.
-*                              Upon calling this function, this number must be zero. Upon return of this function
-*                              this number is initialized with the actual number of entries in the coeffs_tab[].
-* @return
-*/
-ga_status_t     ga_get_coding_coefficients_tab (
-                                         void**         coding_coefs_tab,
-                                         UINT32*        nb_coefs_in_tab);
+ * SENDER:   this function enables the application to retrieve the set of
+ * coding coefficients generated and used by build_repair_symbol().
+ *      build_repair_symbol().
+ * RECEIVER: never used.
+ *
+ * @param ses
+ * @param coding_coefs_tab
+ *      (IN/OUT) pointer to a table of coding coefficients.
+ *      The size (number of bits) of each coefficient depends on
+ *      the FEC scheme. Upon return of this function, this table
+ *      is allocated and filled with coefficient values. The
+ *      release of this table is under the responsibility of the
+ *      application.
+ * @param nb_coefs_in_tab
+ *      (IN/OUT) pointer to the number of entries (i.e.,
+ *      coefficients) in the table.
+ *      Upon calling this function, this number must be zero.
+ *      Upon return of this function this variable is initialized
+ *      with the actual number of entries in the coeffs_tab[].
+ * @return
+ */
+ga_status_t     ga_encoder_get_coding_coefficients_tab (
+                    ga_encoder_t*   enc,
+                    void**      coding_coefs_tab,
+                    uint32_t*   nb_coefs_in_tab);
 
 /**
 * The coding coefficients may be generated in a deterministic manner, (e.g., through the use of a PRNG and the
 * repair symbol ESI used as a seed).
 *
 * @param ses
-* @param params                (IN) pointer to a codec specific structure containing the required parameters.
-*                              These parameters can include a repair symbol ESI or key among other things.
-* @return
-*/
-ga_status_t     ga_generate_coding_coefficients (
-                                          void*          params);
+ * @param params                (IN) pointer to a codec specific structure containing the required parameters.
+ *                              These parameters can include a repair symbol ESI or key among other things.
+ * @return
+ */
+ga_status_t     ga_generate_coding_coefficients (ga_encoder_t*  enc,
+
+
+
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 8]
+
+Internet-Draft                 Generic API                     June 2018
+
+
+                         void*      other_params);
 <CODE ENDS>
 
                              Common functions.
@@ -442,14 +468,6 @@ typedef struct ga_encoder {
 
     /* when a function returns with GA_STATUS_ERROR, the errno variable
      * contains a more detailed error type. */
-
-
-
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 8]
-
-Internet-Draft                 Generic API                     June 2018
-
-
     ga_errno_t  errno;
 
     /* add whatever is needed hereafter... */
@@ -481,6 +499,13 @@ ga_encoder_t* ga_encoder_create (ga_codepoint_t codepoint,
 ga_status_t ga_encoder_release (ga_encoder_t*   enc);
 
 
+
+
+Roca (Ed.), et al.      Expires December 21, 2018               [Page 9]
+
+Internet-Draft                 Generic API                     June 2018
+
+
 /**
  * @brief Set the various callback functions for this encoder.
  * All the callback functions require an opaque context parameter, that must be
@@ -498,31 +523,22 @@ ga_status_t ga_encoder_release (ga_encoder_t*   enc);
  *      passed to the callback function (if any). This context is not
  *      interpreted by this function.
  * @return
-
-
-
-Roca (Ed.), et al.      Expires December 20, 2018               [Page 9]
-
-Internet-Draft                 Generic API                     June 2018
-
-
  */
 ga_status_t ga_encoder_set_callback_functions (ga_encoder_t*    enc,
         void (*source_symbol_removed_from_coding_window_callback)
                     (void*      context,
                      uint32_t   old_symbol_esi),
-            void* context_4_callback);
-
+        void* context_4_callback);
 
 /**
- * @brief This function sets a FEC codec specific control parameter, or
- *  several parameters at once, using a type/length/value approach.
+ * @brief This function sets one or more FEC codec specific parameters,
+ *  using a type/length/value approach for maximum flexibility.
  *
  * @param enc
  * @param type      (IN) Type of parameter.
  * @param length    (IN) length of the pointed value.
  * @param value     (IN) Pointer to the value. The exact type of
- *          the object pointed is FEC codec ID specific.
+ *          the object pointed is FEC codec specific.
  * @return
  */
 ga_status_t ga_encoder_set_parameters  (ga_encoder_t*   enc,
@@ -531,17 +547,25 @@ ga_status_t ga_encoder_set_parameters  (ga_encoder_t*   enc,
                     void*       value);
 
 /**
- * @brief This function gets a FEC codec specific control parameter, or
- *  several parameters at once, using a type/length/value approach.
+ * @brief This function gets one or more FEC codec specific parameters,
+ *  using a type/length/value approach for maximum flexibility.
  *
  * @param enc
  * @param type      (IN) Type of parameter.
  * @param length    (IN) length of the pointed value.
  * @param value     (IN/OUT) Pointer to the value. The exact type of
- *          the object pointed is FEC codec ID specific.
+
+
+
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 10]
+
+Internet-Draft                 Generic API                     June 2018
+
+
+ *          the object pointed is FEC codec specific.
  *          This function updates the value object
- *          accordingly. The caller, who knows the FEC codec
- *          ID, is responsible to allocate the appropriate
+ *          accordingly. The caller, who knows the FEC codec,
+ *          is responsible to allocate the appropriate
  *          object buffer.
  * @return
  */
@@ -554,14 +578,6 @@ ga_status_t ga_encoder_get_parameters  (ga_encoder_t*   enc,
  * List here the FEC codec specific control parameters.
  */
 enum {
-
-
-
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 10]
-
-Internet-Draft                 Generic API                     June 2018
-
-
     GA_ENCODER_GET_PARAM_STATISTICS = 1,    /* for instance... */
     GA_ENCODER_SET_PARAM_RLC_DENSITY_THRESHOLD,
 };
@@ -590,6 +606,18 @@ ga_status_t ga_build_repair_symbol (ga_encoder_t*   enc,
 
                            Decoder API proposal
 
+
+
+
+
+
+
+
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 11]
+
+Internet-Draft                 Generic API                     June 2018
+
+
 5.  Security Considerations
 
    TBD
@@ -610,13 +638,6 @@ ga_status_t ga_build_repair_symbol (ga_encoder_t*   enc,
               Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
               RFC2119, March 1997,
               <http://www.rfc-editor.org/info/rfc2119>.
-
-
-
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 11]
-
-Internet-Draft                 Generic API                     June 2018
-
 
 8.2.  Informative References
 
@@ -648,28 +669,7 @@ Internet-Draft                 Generic API                     June 2018
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 12]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 12]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -725,7 +725,7 @@ public:
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 13]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 13]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -781,7 +781,7 @@ public:
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 14]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 14]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -837,7 +837,7 @@ Internet-Draft                 Generic API                     June 2018
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 15]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 15]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -893,7 +893,7 @@ public:
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 16]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 16]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -949,7 +949,7 @@ public:
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 17]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 17]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1005,7 +1005,7 @@ Internet-Draft                 Generic API                     June 2018
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 18]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 18]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1061,7 +1061,7 @@ typedef enum {
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 19]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 19]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1117,7 +1117,7 @@ typedef void (*sw_encoder_callback_source_ready)(void *context,void* src, uint32
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 20]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 20]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1173,7 +1173,7 @@ status_t sw_encoder_add_source(sw_encoder_t* encoder, void* src, size_t sz);
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 21]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 21]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1229,7 +1229,7 @@ typedef struct sw_decoder sw_decoder_t;
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 22]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 22]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1285,7 +1285,7 @@ status_t sw_decoder_set_control_parameter(sw_decoder_t* decoder, uint32_t type, 
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 23]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 23]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1341,7 +1341,7 @@ A.3.  Cedric API proposal
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 24]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 24]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1397,7 +1397,7 @@ typedef enum {
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 25]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 25]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1453,7 +1453,7 @@ A.4.2.  Session Management
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 26]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 26]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1509,7 +1509,7 @@ status_t     set_fec_parameters (session_t*         ses,
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 27]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 27]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1565,7 +1565,7 @@ A.4.3.  Callback Functions
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 28]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 28]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1621,7 +1621,7 @@ A.4.5.  Coding coefficients functions
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 29]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 29]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1677,7 +1677,7 @@ status_t     generate_coding_coefficients (session_t*     ses,
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 30]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 30]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1733,7 +1733,7 @@ A.4.7.  Decoder specific functions
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 31]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 31]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1789,7 +1789,7 @@ status_t     decode_with_new_repair_symbol (session_t*    ses,
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 32]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 32]
 
 Internet-Draft                 Generic API                     June 2018
 
@@ -1845,4 +1845,4 @@ Authors' Addresses
 
 
 
-Roca (Ed.), et al.      Expires December 20, 2018              [Page 33]
+Roca (Ed.), et al.      Expires December 21, 2018              [Page 33]
