@@ -248,20 +248,18 @@ typedef enum {
 
 
 /**
- * FEC Code codepoints.
+ * FEC Codepoints.
  * These identifiers are opaque identifiers that fully identify an FEC
- * code locally, including its parameters (e.g., Galois Field, or
- * coding coefficient generator).
+ * code locally, including certain parameters like its Galois Field, or
+ * the coding coefficient generator (if several exist).
  * These codepoints are codec specific and only have a local meaning.
  * They should not be transmitted as different implementations may use
  * them inconsistently.
- * FEC codes to be used with a  given protocol (e.g., FECFRAME or QUIC)
- * will be associated to a FEC Scheme whose FEC Encoding ID can be used
- * as an opaque codepoint.
  * Note that the same FEC code may be used by several FEC Encoding IDs
- * and therefore share the same codepoint, or multiple implementations
- * of a given FEC code may also exist locally, with different levels of
- * optimisation, and then several codepoints will exist for them.
+ * and therefore share the same codepoint. On the opposite multiple
+ * implementations of a given FEC code may exist locally, for instance
+ * with different optimisations, and then several codepoints, one per
+ * codec, will exist for the same FEC code.
  */
 typedef enum {
 	GA_NULL_CODEPOINT = 0,	/* codepoint 0 is reserved */
@@ -276,7 +274,7 @@ typedef enum {
 
 
 /**
- * Possible error causes.
+ * Potential errors.
  */
 typedef enum {
 	GA_ERRNO_NIL = 0,
@@ -288,10 +286,45 @@ typedef enum {
 ]]></artwork>
 </figure>
 
+
+			<section title="About FEC Codepoints">
+			<!-- ====================== -->
+
+<t>
+An application first needs to negotiate with its remote side the right FEC Scheme to use.
+This negotiation usually relies on the FEC Encoding ID associated to this FEC Scheme for this application.
+The FEC Encoding ID space, associated to an IANA registry, is protocol specific and the same value are usually
+associated to different FEC Schemes depending on the protocol.
+The FEC Encoding ID, from the Generic FEC API point of view, cannot be used to uniquely identify the codec.
+</t>
+
+<t>
+The use of a codepoint to identify locally the right FEC codec requires that the application knows a
+mapping between the FEC Encoding ID it uses and the local FEC Codepoints corresponding to available codecs.
+This can be done at development time, after including the Generic FEC API header file, which gives access
+to the ga_codepoint_t enumeration.
+</t>
+			</section>
+
 		</section>
 
-		<section title="Coding Coefficients Functions">
+		<section title="Coding Coefficients Functions at an Encoder and Decoder">
 		<!-- ================ -->
+
+<t>
+This section gathers functions used to manage the coding coefficients, both at an encoder and at a decoder.
+Since different FEC codecs will have different requirements, it is important to keep these functions separate
+from the build_repair_symbol() and decode_with_new_repair_symbol() functions.
+Several situations exist:
+<list style="symbols">
+	<t>the application provides the list of coding coefficients to use for the next build_repair_symbol(); </t>
+	<t>the application provides a key (typically a PRNG seed) that the codec uses to produce the coding coefficients to use for the next build_repair_symbol();</t>
+	<t>the choice of the coding coefficients is totally performed by the codec, in an autonomous manner (e.g., the codec
+	   includes an algorithm that produces an appropriate seed based on various criteria, or the codec selects a set of coding coefficients based on various criteria).
+	   In that case the application needs to retrieve the list of coding coefficients or the key selected by the codec;</t>
+</list>
+</t>
+
 
 <figure title="Common functions.">
 <artwork><![CDATA[
@@ -300,19 +333,20 @@ typedef enum {
 /** 
  * The following functions enable an encoder (resp. decoder) to
  * initialize the set of coefficients to be used for encoding
- * or received along with a repair symbol.
- * Encoder: one of them MUST be used before build_repair_symbol().
- * Decoder: one of them MUST be used before decode_with_new_repair_symbol().
+ * or associated to a received repair symbol.
+ *
+ * Encoder: calling one of them MUST be done before calling
+ *		 build_repair_symbol().
+ * Decoder: calling one of them MUST be done before calling
+ *		 decode_with_new_repair_symbol().
  */
-
 
 /**
  * Encoder: this function specifies the coding coefficients chosen by
  *	the application if this is the way the codec works.
- * Decoder: communicate the coding coefficients associated to a repair
- *	symbol and carried in the packet header.
+ * Decoder: communicate with this function the coding coefficients
+ *	associated to a repair symbol and carried in the packet header.
  *
- * @param ses
  * @param coding_coefs_tab
  *		(IN) table of coding coefficients associated to each of
  *		the source symbols currently in the encoding window.
@@ -323,25 +357,49 @@ typedef enum {
  *		(IN) number of entries (i.e., coefficients) in the table.
  * @return
  */
-ga_status_t ga_encoder_set_encoding_coeffs_tab (
+ga_status_t ga_encoder_set_coding_coefs_tab (
 					ga_encoder_t*	enc,
 					void*		coding_coefs_tab,
 					uint32_t	nb_coefs_in_tab);
 
-ga_status_t ga_decoder_set_encoding_coeffs_tab (
+ga_status_t ga_decoder_set_coding_coefs_tab (
 					ga_decoder_t*	dec,
 					void*		coding_coefs_tab,
 					uint32_t	nb_coefs_in_tab);
 
 /**
- * SENDER:   this function enables the application to retrieve the set of
- * coding coefficients generated and used by build_repair_symbol().
- *      build_repair_symbol().
- * RECEIVER: never used.
+ * The coding coefficients may be generated in a deterministic manner,
+ * for instance by a PRNG known by the codec and a seed (perhaps with
+ * other parameters) provided by the application.
+ * The codec may also choose in an autonomous manner these coefficients.
+ * This function is used to trigger this process.
+ * When the choice is made in an autonomous manner, the actual coding
+ * coefficient or key used by the codec can be retrieved with
+ * ga_encoder_get_coding_coefs_tab().
  *
- * @param ses
+ * @param key	(IN) Value that can be used as a seed in case of a PRNG
+ *		for instance, or by a specific coding coefficients
+ *		function. Set to 0 if not required by a codec.
+ * @param other_params
+ *		(IN) pointer to a codec specific structure containing
+ *		the additional parameters that may be used to generate
+ *		the coefficients. Set to NULL if not required by a codec.
+ * @return
+ */
+ga_status_t     ga_generate_coding_coefficients (
+					ga_encoder_t*	enc,
+					uint32_t	key,
+					void*		other_params);
+
+/**
+ * This function enables the application to retrieve the set of coding
+ * coefficients generated and used by build_repair_symbol(). This is
+ * useful when the choice of coefficients is performed by the codec in
+ * an autonomous manner but needs to be sent in the repair packet header.
+ * This function is only used by an encoder.
+ *
  * @param coding_coefs_tab
- *		(IN/OUT) pointer to a table of coding coefficients.
+ *		(OUT) pointer to a table of coding coefficients.
  *		The size (number of bits) of each coefficient depends on
  *		the FEC scheme.	Upon return of this function, this table
  *		is allocated and filled with coefficient values. The
@@ -355,22 +413,11 @@ ga_status_t ga_decoder_set_encoding_coeffs_tab (
  *		with the actual number of entries in the coeffs_tab[].
  * @return 
  */
-ga_status_t     ga_encoder_get_coding_coefficients_tab (
+ga_status_t     ga_encoder_get_coding_coefs_tab (
 					ga_encoder_t*	enc,
 					void**		coding_coefs_tab,
 					uint32_t*	nb_coefs_in_tab);
 
-/**
-* The coding coefficients may be generated in a deterministic manner, (e.g., through the use of a PRNG and the
-* repair symbol ESI used as a seed).
-*
-* @param ses
- * @param params                (IN) pointer to a codec specific structure containing the required parameters.
- *                              These parameters can include a repair symbol ESI or key among other things.
- * @return
- */
-ga_status_t     ga_generate_coding_coefficients (ga_encoder_t*	enc,
-						 void*		other_params);
 <CODE ENDS>
 ]]></artwork>
 </figure>
