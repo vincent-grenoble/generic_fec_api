@@ -993,8 +993,8 @@ ga_status_t ga_encoder_get_parameters  (
  * List here the FEC codec specific control parameters.
  */
 enum {
-	GA_ENCODER_SET_PARAM_RLC_DENSITY_THRESHOLD = 1,
-	GA_ENCODER_GET_PARAM_ENCODER_STATISTICS
+	GA_ENCODER_GET_PARAM_ENCODER_STATISTICS = 1,
+	GA_ENCODER_SET_PARAM_RLC_DENSITY_THRESHOLD
 };
 
 
@@ -1088,7 +1088,6 @@ ga_status_t ga_decoder_release (ga_decoder_t*	dec);
  * @param decoded_source_symbol_callback
  *		(IN) Pointer to the function, within the application, that
  *		needs to be called each time a source symbol is decoded.
- *		This callback is for block and convolutional codes.
  *
  * @param available_source_symbol_callback
  *		(IN) Pointer to the function, within the application, that
@@ -1098,8 +1097,6 @@ ga_status_t ga_decoder_release (ga_decoder_t*	dec);
  *		This function is particularly useful for convolutional codes
  *		where of_get_source_symbols_tab() cannot be used to retrieve
  *		decoded source symbol values.
- *		With block codes, using this function can be an alternative to
- *		using of_get_source_symbols_tab().
  *
  * @param source_symbol_removed_from_coding_window_callback
  *		(IN) Pointer to the function, within the application, that
@@ -1172,8 +1169,8 @@ ga_status_t ga_decoder_get_parameters  (
  * List here the FEC codec specific control parameters.
  */
 enum {
-	GA_DECODER_SET_PARAM_RLC_DENSITY_THRESHOLD = 1,
-	GA_DECODER_GET_PARAM_DECODER_STATISTICS
+	GA_DECODER_GET_PARAM_DECODER_STATISTICS = 1,
+	GA_DECODER_SET_PARAM_RLC_DENSITY_THRESHOLD
 };
 
 
@@ -1183,11 +1180,11 @@ enum {
  * through the dedicated callback functions.
  * 
  * This function usually returns GA_STATUS_OK, regardless of whether this
- * new symbol enabled the decoding of one or several source symbols, and
- * unless an error occured. It cannot return GA_STATUS_FAILURE.
+ * new symbol enabled the decoding of one or several source symbols, or
+ * GA_STATUS_ERROR. It cannot return GA_STATUS_FAILURE.
  *
  * @param dec	pointer to the decoder structure.
- * @param new_src_symbol_buf
+ * @param new_symbol_buf
  *		(IN) Pointer to the new source symbol now available (i.e.
  *		a new symbol received by the application, or a decoded
  *		symbol in case of a recursive call if it makes sense). 
@@ -1197,7 +1194,7 @@ enum {
  */
 ga_status_t	ga_decoder_decode_with_new_source_symbol (
 				ga_decoder_t*	dec,
-				void* const	new_src_symbol_buf,
+				void* const	new_symbol_buf,
 				uint32_t	new_symbol_esi);
 
 
@@ -1206,30 +1203,29 @@ ga_status_t	ga_decoder_decode_with_new_source_symbol (
  * For each decoded source symbol (if any), the application is informed
  * through the dedicated callback functions.
  *
- * This function requires that the application has previously set the
- * coding window and if needed the coding coefficients appropriately.
- * After that, the application can call this function. The application
+ * This function requires that the application has previously initialized
+ * the coding window and coding coefficients appropriately. The application
  * keeps a full control of the repair symbol buffer, i.e., the application
  * is in charge of freeing this buffer as soon as it believes appropriate
- * to do so (a copy is kept by the codec). This is motivated by the fact
- * a repair symbol may be part of a larger buffer (e.g., if there are
- * several repair symbols per packet, or because of a packet header).
- * Only the application knows the associated assumptions and can safely
- * free the appropriate buffer when needed.
+ * (a copy is kept by the codec). This is motivated by the fact that a
+ * repair symbol may be part of a larger buffer (e.g., if there are
+ * several repair symbols per packet, or because of a packet header): only
+ * the application knows when the buffer can be safely freed.
  *
  * This function usually returns GA_STATUS_OK, regardless of whether this
- * new symbol enabled the decoding of one or several source symbols, and
- * unless an error occured. It cannot return GA_STATUS_FAILURE.
+ * new symbol enabled the decoding of one or several source symbols, or
+ * GA_STATUS_ERROR. It cannot return GA_STATUS_FAILURE.
  * 
  * @param dec	pointer to the decoder structure.
- * @param new_repair_symbol_buf
- *		(IN) Pointer to the new repair symbol now available (i.e. a new symbol received by
- *		the application or a decoded symbol in case of a recursive call if it makes sense).
+ * @param new_symbol_buf
+ *		(IN) Pointer to the new repair symbol now available (i.e.
+ *		a new symbol received by the application or a decoded
+ *		symbol in case of a recursive call if it makes sense).
  * @return	
  */
 ga_status_t	ga_decoder_decode_with_new_repair_symbol (
 				ga_decoder_t*	dec,
-				void* const	new_repair_symbol_buf);
+				void* const	new_symbol_buf);
 &lt;CODE ENDS&gt;
 </pre>
 <p class="figure">Decoder API proposal</p>
