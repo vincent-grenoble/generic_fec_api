@@ -763,7 +763,7 @@ ga_status_t	ga_decoder_remove_source_symbol_from_coding_window (
 				UINT32		old_src_symbol_esi);
 &lt;CODE ENDS&gt;
 </pre>
-<p class="figure">Common functions.</p>
+<p class="figure">Coding Window Functions at an Encoder and Decoder.</p>
 <h1 id="rfc.section.4.3"><a href="#rfc.section.4.3">4.3.</a> Coding Coefficients Functions at an Encoder and Decoder</h1>
 <p id="rfc.section.4.3.p.1">This section gathers functions used to manage the coding coefficients, both at an encoder and at a decoder.  Since different FEC codecs will have different requirements, it is important to keep these functions separate from the build_repair_symbol() and decode_with_new_repair_symbol() functions.  Several situations exist: </p>
 
@@ -871,20 +871,18 @@ ga_status_t     ga_encoder_get_coding_coefs_tab (
 				uint32_t*	nb_coefs_in_tab);
 &lt;CODE ENDS&gt;
 </pre>
-<p class="figure">Common functions.</p>
+<p class="figure">Coding Coefficients Functions at an Encoder and Decoder.</p>
 <h1 id="rfc.section.4.4"><a href="#rfc.section.4.4">4.4.</a> Encoder</h1>
 <pre>
 &lt;CODE BEGINS&gt;
 /**
  * Encoder structure that contains whatever is needed for encoding.
- * The exact content of this structure is FEC code dependant.
+ * The exact content of this structure is FEC code dependant, the
+ * structure below being a non normative example.
  */
 typedef struct ga_encoder {
-	/* identifier to use to refer to this codec instance */
-	uint32_t	id;
-
-	/* desired verbosity. 0 is the minimum verbosity, the maximum
-	 * verbosity level is implementation specific. */
+	/* desired verbosity: 0 is the minimum verbosity, the maximum
+	 * level being implementation specific. */
 	uint32_t	verbosity;
 
 	/* when a function returns with GA_STATUS_ERROR, the errno
@@ -908,7 +906,7 @@ typedef struct ga_encoder {
  *			code to use.
  * @param verbosity	print information on the codec processing.
  *			0 is the minimum verbosity, the maximum verbosity
- *			level is implementation specific.
+ *			level being implementation specific.
  * @param symbol_size	source and repair symbol size in bytes. Cannot
  *			change during the codec instance lifetime.
  * @param max_encoding_window_size
@@ -948,9 +946,9 @@ ga_status_t ga_encoder_release (ga_encoder_t*	enc);
  */
 ga_status_t ga_encoder_set_callback_functions (
 		ga_encoder_t*	enc,
-		void (*source_symbol_removed_from_coding_window_callback)
-					(void*		context,
-					 uint32_t	old_symbol_esi),
+		void (*source_symbol_removed_from_coding_window_callback) (
+				void*		context,
+				uint32_t	old_symbol_esi),
 		void* context_4_callback);
 
 /**
@@ -996,7 +994,7 @@ ga_status_t ga_encoder_get_parameters  (
  */
 enum {
 	GA_ENCODER_SET_PARAM_RLC_DENSITY_THRESHOLD = 1,
-	GA_ENCODER_GET_PARAM_STATISTICS
+	GA_ENCODER_GET_PARAM_ENCODER_STATISTICS
 };
 
 
@@ -1020,14 +1018,12 @@ ga_status_t ga_build_repair_symbol (
 &lt;CODE BEGINS&gt;
 /**
  * Decoder structure that contains whatever is needed for decoding.
- * The exact content of this structure is FEC code dependant.
+ * The exact content of this structure is FEC code dependant, the
+ * structure below being a non normative example.
  */
 typedef struct ga_decoder {
-	/* identifier to use to refer to this codec instance */
-	uint32_t	id;
-
-	/* desired verbosity. 0 is the minimum verbosity, the maximum
-	 * verbosity level is implementation specific. */
+	/* desired verbosity: 0 is the minimum verbosity, the maximum
+	 * level being implementation specific. */
 	uint32_t	verbosity;
 
 	/* when a function returns with GA_STATUS_ERROR, the errno
@@ -1040,8 +1036,8 @@ typedef struct ga_decoder {
 	/* max. number of source symbols kepts in current linear system.
 	 * If the linear system grows above this limit, old source
 	 * symbols in excess are removed and the application callback
-	 * called. This value MUST be larger than the
-	 * coding_window_max_size. */
+	 * called. This value should be larger than the
+	 * max_coding_window_size. */
 	uint32_t	max_linear_system_size;
 
 	/* exact size (in bytes) of any source or repair symbol */
@@ -1058,7 +1054,7 @@ typedef struct ga_decoder {
  *			code to use.
  * @param verbosity	print information on the codec processing.
  *			0 is the minimum verbosity, the maximum verbosity
- *			level is implementation specific.
+ *			level being implementation specific.
  * @param symbol_size	source and repair symbol size in bytes. Cannot
  *			change during the codec instance lifetime.
  * @param max_coding_window_size
@@ -1075,17 +1071,20 @@ ga_decoder_t* ga_decoder_create (
 
 
 /**
- * Release an decoder and its associated ressources.
+ * Release a decoder and its associated ressources.
+ *
+ * @param dec	pointer to the decoder structure.
  **/
 ga_status_t ga_decoder_release (ga_decoder_t*	dec);
 
 
 /**
  * Set the various callback functions for this decoder.
- * All the callback functions require an opaque context parameter, that must be
- * initialized accordingly by the application, since it is application specific.
+ * All the callback functions require an opaque context parameter, that
+ * must be initialized accordingly by the application, since it is
+ * application specific.
  *
- * @param dec
+ * @param dec	pointer to the decoder structure.
  * @param decoded_source_symbol_callback
  *		(IN) Pointer to the function, within the application, that
  *		needs to be called each time a source symbol is decoded.
@@ -1117,25 +1116,25 @@ ga_status_t ga_decoder_release (ga_decoder_t*	dec);
 ga_status_t ga_decoder_set_callback_functions (
 		ga_decoder_t*	dec,
 		void* (*decoded_source_symbol_callback) (
-					void		*context,
-					uint32_t	size, /* size of decoded src symb. */
-					uint32_t	esi),
+				void		*context,
+				uint32_t	size, /* size of decoded src symb. */
+				uint32_t	esi),
 		void (*available_source_symbol_callback) (
-					void		*context,
-					void		*new_symbol_buf,/* symbol buffer */
-					uint32_t	size,	/* size of decoded src symb. */
-					uint32_t	esi),	/* encoding symbol ID */
-		void (*source_symbol_removed_from_coding_window_callback)
-					(void*		context,
-					 uint32_t	old_symbol_esi),
-		void*		context_4_callback);
+				void		*context,
+				void		*new_symbol_buf, /* symbol buffer */
+				uint32_t	size,	/* size of decoded src symb. */
+				uint32_t	esi),	/* encoding symbol ID */
+		void (*source_symbol_removed_from_coding_window_callback) (
+				void*		context,
+				uint32_t	old_symbol_esi),
+		void*	context_4_callback);
 
 
 /**
  * This function sets one or more FEC codec specific parameters,
  *	using a type/length/value approach for maximum flexibility.
  *
- * @param dec
+ * @param dec	pointer to the decoder structure.
  * @param type		(IN) Type of parameter.
  * @param length	(IN) length of the pointed value.
  * @param value		(IN) Pointer to the value. The exact type of
@@ -1152,7 +1151,7 @@ ga_status_t ga_decoder_set_parameters  (
  * This function gets one or more FEC codec specific parameters,
  *	using a type/length/value approach for maximum flexibility.
  *
- * @param dec
+ * @param dec	pointer to the decoder structure.
  * @param type		(IN) Type of parameter.
  * @param length	(IN) length of the pointed value.
  * @param value		(IN/OUT) Pointer to the value. The exact type of
@@ -1174,7 +1173,7 @@ ga_status_t ga_decoder_get_parameters  (
  */
 enum {
 	GA_DECODER_SET_PARAM_RLC_DENSITY_THRESHOLD = 1,
-	GA_DECODER_GET_PARAM_STATISTICS
+	GA_DECODER_GET_PARAM_DECODER_STATISTICS
 };
 
 
@@ -1183,14 +1182,18 @@ enum {
  * For each decoded source symbol (if any), the application is informed
  * through the dedicated callback functions.
  * 
- * This function usually returns OF_STATUS_OK, regardless of whether this new symbol enabled the
- * decoding of one or several source symbols, unless an error occured. This function cannot return
- * OF_STATUS_FAILURE.
+ * This function usually returns GA_STATUS_OK, regardless of whether this
+ * new symbol enabled the decoding of one or several source symbols, and
+ * unless an error occured. It cannot return GA_STATUS_FAILURE.
  *
- * @param new_src_symbol_buf	(IN) Pointer to the new source symbol now available (i.e. a new symbol received by
- *				the application, or a decoded symbol in case of a recursive call if it makes sense).
- * @param new_symbol_esi 	(IN) encoding symbol ID of the new source symbol.
- * @return			Completion status (OF_STATUS_OK, ERROR or FATAL_ERROR).
+ * @param dec	pointer to the decoder structure.
+ * @param new_src_symbol_buf
+ *		(IN) Pointer to the new source symbol now available (i.e.
+ *		a new symbol received by the application, or a decoded
+ *		symbol in case of a recursive call if it makes sense). 
+ * @param new_symbol_esi 
+ *		(IN) encoding symbol ID of the new source symbol.
+ * @return	
  */
 ga_status_t	ga_decoder_decode_with_new_source_symbol (
 				ga_decoder_t*	dec,
@@ -1203,27 +1206,30 @@ ga_status_t	ga_decoder_decode_with_new_source_symbol (
  * For each decoded source symbol (if any), the application is informed
  * through the dedicated callback functions.
  *
- * This function requires that the application has previously set the coding window and if needed
- * the coding coefficients appropriately. After that, the application can call this function. The
- * application keeps a full control of the repair symbol buffer, i.e., the application is in charge
- * of freeing this buffer as soon as it believes appropriate to do so (a copy is kept by the codec).
- * This is motivated by the fact a repair symbol may be part of a larger buffer (e.g., if there are
- * several repair symbols per packet, or because of a packet header). Only the application knows
- * the associated assumptions and can safely free the appropriate buffer when needed.
+ * This function requires that the application has previously set the
+ * coding window and if needed the coding coefficients appropriately.
+ * After that, the application can call this function. The application
+ * keeps a full control of the repair symbol buffer, i.e., the application
+ * is in charge of freeing this buffer as soon as it believes appropriate
+ * to do so (a copy is kept by the codec). This is motivated by the fact
+ * a repair symbol may be part of a larger buffer (e.g., if there are
+ * several repair symbols per packet, or because of a packet header).
+ * Only the application knows the associated assumptions and can safely
+ * free the appropriate buffer when needed.
  *
- * This function usually returns OF_STATUS_OK, regardless of whether this new symbol enabled the
- * decoding of one or several source symbols, unless an error occured. This function cannot return
- * OF_STATUS_FAILURE.
+ * This function usually returns GA_STATUS_OK, regardless of whether this
+ * new symbol enabled the decoding of one or several source symbols, and
+ * unless an error occured. It cannot return GA_STATUS_FAILURE.
  * 
- * @param new_repair_symbol_buf	(IN) Pointer to the new repair symbol now available (i.e. a new symbol received by
- *				the application or a decoded symbol in case of a recursive call if it makes sense).
- * @return			Completion status (OF_STATUS_OK, ERROR or FATAL_ERROR).
+ * @param dec	pointer to the decoder structure.
+ * @param new_repair_symbol_buf
+ *		(IN) Pointer to the new repair symbol now available (i.e. a new symbol received by
+ *		the application or a decoded symbol in case of a recursive call if it makes sense).
+ * @return	
  */
 ga_status_t	ga_decoder_decode_with_new_repair_symbol (
 				ga_decoder_t*	dec,
 				void* const	new_repair_symbol_buf);
-
-
 &lt;CODE ENDS&gt;
 </pre>
 <p class="figure">Decoder API proposal</p>
