@@ -74,7 +74,7 @@ Forward Erasure Correction (FEC) codes are a key element of communication system
 Among the FEC codes working at the network and higher layers, one can broadly distinguish block codes and sliding window codes.
 Block FEC codes require the data flow coming from the application to be segmented into blocks of a predefined maximum size, before generating a certain number of repair packets.
 With the second type of FEC codes, an encoding window continuously slides over the set of source data and repair packets are generated at any time by computing for instance a linear combination of data present in the encoding window.
-This fondamental difference seriously impacts the way they can be used by a content delivery protocol or application.
+This fundamental difference seriously impacts the way they can be used by a content delivery protocol or application.
 </t>
 
 <t>
@@ -90,7 +90,7 @@ This API is meant to be usable by any sliding window FEC code.
 independently of the FEC Scheme or network coding protocol that may rely on it
 This API defines the core procedures and functions meant to control the codec (i.e., implementation of the FEC code), but leaves out all upper layer aspects that are the responsibility of the application making use of the codec.
 For instance, those restricted to end-to-end use-cases as well as those compatible with in-network re-encoding use-cases.
-Additionaly, this API is not impacted by the intra-flow versus inter-flow nature of the use-case, nor is it impacted by the single-path versus multi-paths nature of the use-case, since those are usage considerations under the responsibility of the caller.
+Additionally, this API is not impacted by the intra-flow versus inter-flow nature of the use-case, nor is it impacted by the single-path versus multi-paths nature of the use-case, since those are usage considerations under the responsibility of the caller.
 </t>
 
 <t>
@@ -136,9 +136,9 @@ This generic FEC API is meant to be used with:
 
 	<t>use-cases that involve a dynamic adaptation of the codec parameters (e.g., its code rate because the communication path losses is known thanks to feedbacks and an appropriate strategy can be defined);</t>
 
-	<t>fixed code rate or not FEC codes, including rateless codes where the number of repair symbols that can be generated is huge (in theory illimited);</t>
+	<t>fixed code rate or not FEC codes, including rateless codes where the number of repair symbols that can be generated is huge (in theory unlimited);</t>
 
-	<t>ideal (MDS) or non ideal (non-MDS) codes. However most of the time, sliding window codes are non-ideal codes, meaning that slightly more than l repair symbols may be required to recover all the l lost source symbols;</t>
+	<t>ideal (MDS) or non-ideal (non-MDS) codes. However most of the time, sliding window codes are non-ideal codes, meaning that slightly more than l repair symbols may be required to recover all the l lost source symbols;</t>
 </list>
 </t>
 
@@ -171,14 +171,14 @@ More precisely, an FEC Scheme (such as the RLC FEC Scheme <xref target="RLC"/> i
 
 <t>
 Applying FEC coding, through an FEC Scheme, in a given protocol to improve transmission robustness involves many mechanisms.
-However these mechanisms are not all the responsibility of the codec and can be implemented within the application or within the protocol that uses this FEC codec.
-For instance the following mechanisms are considered **out of scope of the API**, being implemented by the caller, without any impact on the codec:
+However, these mechanisms are not all the responsibility of the codec and can be implemented within the application or within the protocol that uses this FEC codec.
+For instance, the following mechanisms are considered **out of scope of the API**, being implemented by the caller, without any impact on the codec:
 <list style="symbols">
 	<t> memory management; </t>
 	<t> packet transmission and reception; </t>
 	<t> signaling header creation / parsing; </t>
 	<t> ADU to source symbol mapping; </t>
-	<t> code rate adjusment, for instance thanks to the knowledge of losses at a receiver via feedbacks; </t>
+	<t> code rate adjustment, for instance thanks to the knowledge of losses at a receiver via feedbacks; </t>
 	<t> selective ACK creation and parsing; </t>
 	<t> congestion control. </t>
 </list>
@@ -292,7 +292,7 @@ typedef enum {
  * Note that the same FEC code may be used by several FEC Encoding IDs
  * and therefore share the same codepoint. On the opposite multiple
  * implementations of a given FEC code may exist locally, for instance
- * with different optimisations, and then several codepoints, one per
+ * with different optimizations, and then several codepoints, one per
  * codec, will exist for the same FEC code. The following names are
  * therefore only provided as examples.
  */
@@ -331,7 +331,7 @@ Once this coding window is ready, as well as the coding coefficient list if appl
 the decode_with_new_repair_symbol() function. A coding window may be reused for several repair symbols as long as
 they are all built from the same set of source symbols. In that case resetting the coding window and setting it
 from scratch would be a waste of time. The coding window must be viewed as a temporary list used solely by the
-decode_with_new_repair_symbol() function and kept independant from the linear system managed by the codec.
+decode_with_new_repair_symbol() function and kept independent from the linear system managed by the codec.
 </t>
 
 <figure title="Coding Window Functions at an Encoder and Decoder.">
@@ -564,7 +564,7 @@ ga_status_t     ga_encoder_get_coding_coefs_tab (
 <CODE BEGINS>
 /**
  * Encoder structure that contains whatever is needed for encoding.
- * The exact content of this structure is FEC code dependant, the
+ * The exact content of this structure is FEC code dependent, the
  * structure below being a non normative example.
  */
 typedef struct ga_encoder {
@@ -622,9 +622,13 @@ ga_status_t ga_encoder_release (ga_encoder_t*	enc);
  * @param source_symbol_removed_from_coding_window_callback
  *		(IN) Pointer to the function, within the application, that
  *		needs to be called each time a source symbol is removed from
- *		the left side of the coding window, because this window has
- *		slided to the right.
- *		old source symbol is now forgotten.
+ *		the left side of the coding window.
+ *		This callback is called each time the encoding window slides
+ *		to the right and an old source symbol needs to be removed on
+ *		the left. The application therefore knows this source symbol
+ *		will no longer be used by the codec and can free the
+ *		associated buffer if need be. This function does not return
+ *		anything.
  * @param context_4_callback
  *		(IN) Pointer to the application-specific context that will be
  *		passed to the callback function (if any). This context is not
@@ -634,8 +638,8 @@ ga_status_t ga_encoder_release (ga_encoder_t*	enc);
 ga_status_t ga_encoder_set_callback_functions (
 		ga_encoder_t*	enc,
 		void (*source_symbol_removed_from_coding_window_callback) (
-				void*		context,
-				uint32_t	old_symbol_esi),
+					void*		context,
+					uint32_t	old_symbol_esi),
 		void* context_4_callback);
 
 /**
@@ -711,7 +715,7 @@ ga_status_t ga_build_repair_symbol (
 <CODE BEGINS>
 /**
  * Decoder structure that contains whatever is needed for decoding.
- * The exact content of this structure is FEC code dependant, the
+ * The exact content of this structure is FEC code dependent, the
  * structure below being a non normative example.
  */
 typedef struct ga_decoder {
@@ -766,7 +770,7 @@ ga_decoder_t* ga_decoder_create (
 /**
  * Release a decoder and its associated ressources.
  *
- * @param dec	pointer to the decoder structure.
+ * @param dec	context (i.e., pointer to decoder structure).
  **/
 ga_status_t ga_decoder_release (ga_decoder_t*	dec);
 
@@ -777,26 +781,39 @@ ga_status_t ga_decoder_release (ga_decoder_t*	dec);
  * must be initialized accordingly by the application, since it is
  * application specific.
  *
- * @param dec	pointer to the decoder structure.
+ * @param dec	context (i.e., pointer to decoder structure).
+ * @param source_symbol_removed_from_coding_window_callback
+ *		(IN) Pointer to the function, within the application, that
+ *		needs to be called each time a source symbol is removed from
+ *		the left side of the coding window.
+ *		This callback is called each time the decoding window slides
+ *		to the right and an old source symbol needs to be removed
+ *		on the left. This function does not return anything.
  * @param decoded_source_symbol_callback
  *		(IN) Pointer to the function, within the application, that
  *		needs to be called each time a source symbol is decoded.
- *
+ *		What it does is application-dependent, but it MUST return
+ *		either a pointer to a data buffer, left uninitialized, of
+ *		the appropriate size, or NULL if the application prefers to
+ *		let the codec allocate the buffer.
+ *		In any case the codec is responsible for storing the actual
+ *		symbol value within the data buffer. Also, no matter
+ *		whether the data buffer is allocated by the application or
+ *		the codec, it is the responsibility of the application to
+ *		free this buffer when needed, once decoding is over (but
+ *		not before since the codec does not keep any internal copy).
  * @param available_source_symbol_callback
  *		(IN) Pointer to the function, within the application, that
  *		needs to be called each time a source symbol is decoded and
  *		all computations performed (i.e., the buffer does contain the
  *		symbol value).
- *		This function is particularly useful for convolutional codes
- *		where of_get_source_symbols_tab() cannot be used to retrieve
- *		decoded source symbol values.
- *
- * @param source_symbol_removed_from_coding_window_callback
- *		(IN) Pointer to the function, within the application, that
- *		needs to be called each time a source symbol is removed from
- *		the left side of the coding window, because this window has
- *		slided to the right.
- *		old source symbol is now forgotten.
+ *		This callback is called in a second time, when the newly
+ *		decoded source symbol is actually ready, i.e. when all the
+ *		computations (like XOR and GF(2**8) operations) have been
+ *		performed. In any case, it is the responsibility of the
+ *		application to free this buffer when needed, once decoding
+ *		is over (but not before since the codec does not keep any
+ *		internal copy). This function does not return anything.
  * @param context_4_callback
  *		(IN) Pointer to the application-specific context that will be
  *		passed to the callback function (if any). This context is not
@@ -805,18 +822,16 @@ ga_status_t ga_decoder_release (ga_decoder_t*	dec);
  */
 ga_status_t ga_decoder_set_callback_functions (
 		ga_decoder_t*	dec,
-		void* (*decoded_source_symbol_callback) (
-				void		*context,
-				uint32_t	size, /* size of decoded src symb. */
-				uint32_t	esi),
-		void (*available_source_symbol_callback) (
-				void		*context,
-				void		*new_symbol_buf, /* symbol buffer */
-				uint32_t	size,	/* size of decoded src symb. */
-				uint32_t	esi),	/* encoding symbol ID */
 		void (*source_symbol_removed_from_coding_window_callback) (
-				void*		context,
-				uint32_t	old_symbol_esi),
+					void*		context,
+					uint32_t	old_symbol_esi),
+		void* (*decoded_source_symbol_callback) (
+					void		*context,
+					uint32_t	esi),
+		void (*available_source_symbol_callback) (
+					void		*context,
+					void		*new_symbol_buf,
+					uint32_t	esi),
 		void*	context_4_callback);
 
 
@@ -824,7 +839,7 @@ ga_status_t ga_decoder_set_callback_functions (
  * This function sets one or more FEC codec specific parameters,
  *	using a type/length/value approach for maximum flexibility.
  *
- * @param dec	pointer to the decoder structure.
+ * @param dec	context (i.e., pointer to decoder structure).
  * @param type		(IN) Type of parameter.
  * @param length	(IN) length of the pointed value.
  * @param value		(IN) Pointer to the value. The exact type of
@@ -841,7 +856,7 @@ ga_status_t ga_decoder_set_parameters  (
  * This function gets one or more FEC codec specific parameters,
  *	using a type/length/value approach for maximum flexibility.
  *
- * @param dec	pointer to the decoder structure.
+ * @param dec	context (i.e., pointer to decoder structure).
  * @param type		(IN) Type of parameter.
  * @param length	(IN) length of the pointed value.
  * @param value		(IN/OUT) Pointer to the value. The exact type of
@@ -876,7 +891,7 @@ enum {
  * new symbol enabled the decoding of one or several source symbols, or
  * GA_STATUS_ERROR. It cannot return GA_STATUS_FAILURE.
  *
- * @param dec	pointer to the decoder structure.
+ * @param dec	context (i.e., pointer to decoder structure).
  * @param new_symbol_buf
  *		(IN) Pointer to the new source symbol now available (i.e.
  *		a new symbol received by the application, or a decoded
@@ -909,7 +924,7 @@ ga_status_t	ga_decoder_decode_with_new_source_symbol (
  * new symbol enabled the decoding of one or several source symbols, or
  * GA_STATUS_ERROR. It cannot return GA_STATUS_FAILURE.
  * 
- * @param dec	pointer to the decoder structure.
+ * @param dec	context (i.e., pointer to decoder structure).
  * @param new_symbol_buf
  *		(IN) Pointer to the new repair symbol now available (i.e.
  *		a new symbol received by the application or a decoded
@@ -924,65 +939,6 @@ ga_status_t	ga_decoder_decode_with_new_repair_symbol (
 </figure>
 
 		</section>
-
-<!--
-		<section title="Session Management (Sender and Receiver)">
-
-<figure title="API proposal">
-<artwork><![CDATA[
-<CODE BEGINS>
-// create and initialize an instance
-
-// release an instance
-
-// get/set a parameter at any time (e.g., in order to enable dynamic
-// adjustement of some internal parameter)
-
-<CODE ENDS>
-]]></artwork>
-</figure>
-
-		</section>
-
-		<section title="Encoding Window Management (Sender and Receiver)">
-
-<figure title="API proposal">
-<artwork><![CDATA[
-<CODE BEGINS>
-
-
-
-<CODE ENDS>
-]]></artwork>
-</figure>
-
-		</section>
-
-		<section title="Building a Coding Packet or Symbol (TBD!) (Sender)">
-
-<figure title="API proposal">
-<artwork><![CDATA[
-<CODE BEGINS>
-
-<CODE ENDS>
-]]></artwork>
-</figure>
-
-		</section>
-
-		<section title="Decoding with a Source or Repair Packet or Symbol (TBD!) (Receiver)">
-
-<figure title="API proposal">
-<artwork><![CDATA[
-<CODE BEGINS>
-
-<CODE ENDS>
-]]></artwork>
-</figure>
-
-		</section>
-
--->
 
 	</section>
 
