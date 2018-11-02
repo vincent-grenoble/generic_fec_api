@@ -830,12 +830,13 @@ swif_status_t   swif_decoder_release (swif_decoder_t*        dec);
  *              all computations performed (i.e., the buffer does contain the
  *              symbol value).
  *              This callback is called in a second time, when the newly
- *              decoded source symbol is actually ready, i.e. when all the
- *              computations (like XOR and GF(2**8) operations) have been
- *              performed. In any case, it is the responsibility of the
- *              application to free this buffer when needed, once decoding
- *              is over (but not before since the codec does not keep any
- *              internal copy). This function does not return anything.
+ *              decodable source symbol is actually decoded and ready,
+ *              i.e., when all the computations (like XOR and GF(2**8)
+ *              operations) have been performed. In any case, it is the
+ *              responsibility of the application to free this buffer when
+ *              needed, once decoding is over (but not before since the
+ *              codec does not keep any internal copy). This function does
+ *              not return anything.
  * @param context_4_callback
  *              (IN) Pointer to the application-specific context that will be
  *              passed to the callback function (if any). This context is not

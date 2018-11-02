@@ -968,12 +968,13 @@ Internet-Draft                 Generic API                 November 2018
  *              all computations performed (i.e., the buffer does contain the
  *              symbol value).
  *              This callback is called in a second time, when the newly
- *              decoded source symbol is actually ready, i.e. when all the
- *              computations (like XOR and GF(2**8) operations) have been
- *              performed. In any case, it is the responsibility of the
- *              application to free this buffer when needed, once decoding
- *              is over (but not before since the codec does not keep any
- *              internal copy). This function does not return anything.
+ *              decodable source symbol is actually decoded and ready,
+ *              i.e., when all the computations (like XOR and GF(2**8)
+ *              operations) have been performed. In any case, it is the
+ *              responsibility of the application to free this buffer when
+ *              needed, once decoding is over (but not before since the
+ *              codec does not keep any internal copy). This function does
+ *              not return anything.
  * @param context_4_callback
  *              (IN) Pointer to the application-specific context that will be
  *              passed to the callback function (if any). This context is not
@@ -1001,7 +1002,6 @@ swif_status_t   swif_decoder_set_callback_functions (
  *
  * @param dec           context (i.e., pointer to decoder structure).
  * @param type          (IN) Type of parameter.
- * @param length        (IN) length of the pointed value.
 
 
 
@@ -1010,6 +1010,7 @@ Roca (Ed.), et al.         Expires May 6, 2019                 [Page 18]
 Internet-Draft                 Generic API                 November 2018
 
 
+ * @param length        (IN) length of the pointed value.
  * @param value         (IN) Pointer to the value. The exact type of
  *                      the object pointed is FEC codec specific.
  * @return
@@ -1057,7 +1058,6 @@ enum {
  *
  * This function usually returns SWIF_STATUS_OK, regardless of whether
  * this new symbol enabled the decoding of one or several source symbols,
- * or SWIF_STATUS_ERROR. It cannot return SWIF_STATUS_FAILURE.
 
 
 
@@ -1066,6 +1066,7 @@ Roca (Ed.), et al.         Expires May 6, 2019                 [Page 19]
 Internet-Draft                 Generic API                 November 2018
 
 
+ * or SWIF_STATUS_ERROR. It cannot return SWIF_STATUS_FAILURE.
  *
  * @param dec   context (i.e., pointer to decoder structure).
  * @param new_symbol_buf
@@ -1113,7 +1114,6 @@ swif_status_t   swif_decoder_decode_with_new_repair_symbol (
 <CODE ENDS>
 
                            Decoder API proposal
-
 
 
 
