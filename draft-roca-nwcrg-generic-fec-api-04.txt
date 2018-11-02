@@ -342,8 +342,8 @@ Internet-Draft                 Generic API                 November 2018
  * Potential errors.
  */
 typedef enum {
-        SWIF_ERRNO_NIL = 0,
-        SWIF_ERRNO_CODEPOINT_NOT_SUPPORTED,
+        SWIF_ERRNO_NULL = 0,            /* everything is fine */
+        SWIF_ERRNO_UNSUPPORTED_CODEPOINT,
         /* and many more... */
 } swif_errno_t;
 
@@ -364,15 +364,15 @@ typedef enum {
  * therefore only provided as examples.
  */
 typedef enum {
-        swif_NULL_CODEPOINT = 0,        /* codepoint 0 is reserved */
+        SWIF_CODEPOINT_NULL = 0,        /* codepoint 0 is reserved */
 
         /* codepoint for RLC sliding window code, GF(2^8) and variable
          * density (as in FECFRAME FEC Enc. ID XXX). */
-        swif_RLC_GF_256_VAR_DENSITY_CODEC,
+        SWIF_CODEPOINT_RLC_GF_256_VAR_DENSITY_CODEC,
 
         /* codepoint for RLC sliding window code, GF(2) and variable
          * density (as in FECFRAME FEC Enc. ID YYY). */
-        swif_RLC_GF_2_VAR_DENSITY_CODEC,
+        SWIF_CODEPOINT_RLC_GF_2_VAR_DENSITY_CODEC,
 
         /* list here other identifiers for any codec of interest... */
 } swif_codepoint_t;
