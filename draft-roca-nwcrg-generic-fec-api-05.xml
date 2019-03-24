@@ -327,13 +327,36 @@ typedef uint32_t	esi_t;
  * new pieces of information that are specific to each codec.
  */
 typedef struct swif_encoder {
-        swif_codepoint_t       codepoint;
+	swif_codepoint_t	codepoint;
 
-        /* when a function returns with SWIF_STATUS_ERROR, the errno
-         * variable contains a more detailed error type. This variable
-         * is set by the codec and accessible to the application in
-         * READ ONLY mode. Otherwise its value is undefined. */
-        swif_errno_t            swif_errno;
+	/* when a function returns with SWIF_STATUS_ERROR, the errno
+	 * variable contains a more detailed error type. This variable
+	 * is set by the codec and accessible to the application in
+	 * READ ONLY mode. Otherwise its value is undefined. */
+	swif_errno_t		swif_errno;
+
+	/* pointers to codec specific versions of API functions. */
+	swif_status_t   (*set_callback_functions) (
+		struct swif_encoder*, void (*) (void*, esi_t), void*);
+	swif_status_t   (*set_parameters)  (
+		struct swif_encoder*, uint32_t, uint32_t, void*);
+	swif_status_t   (*get_parameters)  (
+		struct swif_encoder*, uint32_t, uint32_t, void*);
+	swif_status_t   (*build_repair_symbol) (
+		struct swif_encoder*, void*);
+	swif_status_t   (*reset_coding_window) (struct swif_encoder*);
+	swif_status_t   (*add_source_symbol_to_coding_window) (
+		struct swif_encoder*, void*, esi_t);
+	swif_status_t   (*remove_source_symbol_from_coding_window) (
+		struct swif_encoder*, esi_t);
+	swif_status_t	(*get_coding_window_information) (
+		struct swif_encoder*, esi_t*, esi_t*, uint32_t*);
+	swif_status_t   (*set_coding_coefs_tab) (
+		struct swif_encoder*, void*, uint32_t);
+	swif_status_t   (*generate_coding_coefs) (
+		struct swif_encoder*, uint32_t, uint32_t);
+	swif_status_t   (*get_coding_coefs_tab) (
+		struct swif_encoder*, void**, uint32_t*);
 } swif_encoder_t;
 
 
@@ -343,13 +366,36 @@ typedef struct swif_encoder {
  * structure below being a non normative example.
  */
 typedef struct swif_decoder {
-        swif_codepoint_t       codepoint;
+	swif_codepoint_t	codepoint;
 
-        /* when a function returns with SWIF_STATUS_ERROR, the errno
-         * variable contains a more detailed error type. This variable
-         * is set by the codec and accessible to the application in
-         * READ ONLY mode. Otherwise its value is undefined. */
-        swif_errno_t           errno;
+	/* when a function returns with SWIF_STATUS_ERROR, the errno
+	 * variable contains a more detailed error type. This variable
+	 * is set by the codec and accessible to the application in
+	 * READ ONLY mode. Otherwise its value is undefined. */
+	swif_errno_t		swif_errno;
+
+	/* pointers to codec specific versions of API functions. */
+	swif_status_t   (*set_callback_functions) (
+		struct swif_decoder*, void (*) (void*, esi_t),
+		void* (*) (void*, esi_t),
+		void* (*) (void*, void*, esi_t), void*);
+	swif_status_t   (*set_parameters)  (
+		struct swif_decoder*, uint32_t, uint32_t, void*);
+	swif_status_t   (*get_parameters)  (
+		struct swif_decoder*, uint32_t, uint32_t, void*);
+	swif_status_t   (*decode_with_new_source_symbol) (
+		struct swif_decoder*, void* const, esi_t);
+	swif_status_t   (*decode_with_new_repair_symbol) (
+		struct swif_decoder*, void* const);
+	swif_status_t   (*reset_coding_window) (swif_encoder_t*);
+	swif_status_t   (*add_source_symbol_to_coding_window) (
+		struct swif_decoder*, esi_t);
+	swif_status_t   (*remove_source_symbol_from_coding_window) (
+		struct swif_decoder*, esi_t);
+	swif_status_t   (*set_coding_coefs_tab) (
+		struct swif_decoder*, void*, uint32_t);
+	swif_status_t   (*generate_coding_coefs) (
+		struct swif_decoder*, uint32_t, uint32_t);
 } swif_decoder_t;
 <CODE ENDS>
 ]]></artwork>
@@ -501,11 +547,8 @@ swif_status_t   swif_build_repair_symbol (
  * depending on the context.
  */
 typedef struct swif_encoder_internal {
-        swif_codepoint_t       codepoint;
-
-        /* when a function returns with SWIF_STATUS_ERROR, the errno
-         * variable contains a more detailed error type. */
-        swif_errno_t    swif_errno;
+	/* generic part of any control block. MUST be first in structure */
+	swif_encoder_t		generic_encoder;
 
         /* desired verbosity: 0 is the minimum verbosity, the maximum
          * level being implementation specific. */
@@ -739,11 +782,8 @@ swif_status_t   swif_decoder_decode_with_new_repair_symbol (
  * depending on the context.
  */
 typedef struct swif_decoder_internal {
-        swif_codepoint_t       codepoint;
-
-        /* when a function returns with SWIF_STATUS_ERROR, the errno
-         * variable contains a more detailed error type. */
-        swif_errno_t           errno;
+	/* generic part of any control block. MUST be first in structure */
+	swif_decoder_t		generic_decoder;
 
         /* desired verbosity: 0 is the minimum verbosity, the maximum
          * level being implementation specific. */
@@ -806,7 +846,7 @@ decode_with_new_repair_symbol() function and kept independent from the linear sy
  */
 swif_status_t   swif_encoder_reset_coding_window (swif_encoder_t*  enc);
 
-swif_status_t   swif_decoder_reset_coding_window (swif_encoder_t*  dec);
+swif_status_t   swif_decoder_reset_coding_window (swif_decoder_t*  dec);
 
 
 /**
@@ -1037,7 +1077,7 @@ This document has no IANA requirement.
 	<!-- ====================== -->
 
 <t>
-The authors would like to thank TBD.
+The authors would like to thank Marie-Jose Montpetit, Francois Michel, and Oumaima Attia for their valuable contributions to the IETF Hackathon SWiF-Codec project and their inputs to this document.
 </t>
 
 	</section>
