@@ -286,8 +286,7 @@ typedef enum {
 /**
  * FEC Codepoints.
  * These identifiers are opaque identifiers that fully identify an FEC
- * code locally, including certain parameters like its Galois Field, or
- * the coding coefficient generator (if several exist).
+ * code locally, including certain parameters like its Galois Field.
  * These codepoints are codec specific and only have a local meaning.
  * They should not be transmitted as different implementations may use
  * them inconsistently.
@@ -461,7 +460,7 @@ swif_status_t   swif_encoder_release (swif_encoder_t*        enc);
  * @return
  */
 swif_status_t   swif_encoder_set_callback_functions (
-                swif_encoder_t*        enc,
+                swif_encoder_t*         enc,
                 void (*source_symbol_removed_from_coding_window_callback) (
                                         void*   context,
                                         esi_t   old_symbol_esi),
@@ -529,6 +528,7 @@ enum {
 swif_status_t   swif_build_repair_symbol (
                                 swif_encoder_t* enc,
                                 void*           new_buf);
+/* FIX ME: must be void** to enable returning a pointer to buffer! */
 <CODE ENDS>
 ]]></artwork>
 </figure>
@@ -548,7 +548,7 @@ swif_status_t   swif_build_repair_symbol (
  */
 typedef struct swif_encoder_internal {
 	/* generic part of any control block. MUST be first in structure */
-	swif_encoder_t		generic_encoder;
+        swif_encoder_t  gen;
 
         /* desired verbosity: 0 is the minimum verbosity, the maximum
          * level being implementation specific. */
@@ -783,24 +783,24 @@ swif_status_t   swif_decoder_decode_with_new_repair_symbol (
  */
 typedef struct swif_decoder_internal {
 	/* generic part of any control block. MUST be first in structure */
-	swif_decoder_t		generic_decoder;
+        swif_decoder_t  gen;
 
         /* desired verbosity: 0 is the minimum verbosity, the maximum
          * level being implementation specific. */
-        uint32_t               verbosity;
+        uint32_t        verbosity;
 
         /* maximum number of source symbols used for any repair symbol */
-        uint32_t               max_coding_window_size;
+        uint32_t        max_coding_window_size;
 
         /* max. number of source symbols kepts in current linear system.
          * If the linear system grows above this limit, old source
          * symbols in excess are removed and the application callback
          * called. This value should be larger than the
          * max_coding_window_size. */
-        uint32_t               max_linear_system_size;
+        uint32_t        max_linear_system_size;
 
         /* exact size (in bytes) of any source or repair symbol */
-        uint32_t               symbol_size;
+        uint32_t        symbol_size;
 
         /* add whatever may be needed hereafter... */
 } swif_decoder_internal_t;
