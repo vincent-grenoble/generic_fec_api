@@ -13,6 +13,7 @@
 
 
 <rfc category="info" docName="draft-roca-nwcrg-generic-fec-api-07" ipr="trust200902">
+<!-- <rfc ipr='trust200902' xmlns:xi="http://www.w3.org/2001/XInclude" tocInclude="true" symRefs="true" sortRefs="true" docName="draft-roca-nwcrg-generic-fec-api-07"> -->
 
 <front>
 	<title abbrev="Generic API">Generic Application Programming Interface (API) for Sliding Window FEC Codes</title>

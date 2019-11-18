@@ -5,8 +5,8 @@ TXT=${NAME_BASE}.txt
 HTML=${NAME_BASE}.html
 
 all:
-	xml2rfc --text ${XML}
-	#xml2rfc --html ${XML}
+	xml2rfc --v3 --text ${XML}
+	xml2rfc --v3 --html ${XML}
 
 
 diff:
@@ -15,4 +15,4 @@ diff:
 
 clean:
 	rm ${TXT}
-	#rm ${HTML}
+	rm ${HTML}

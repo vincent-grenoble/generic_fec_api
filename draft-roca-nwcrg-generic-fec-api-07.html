@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Generic Application Programming Interface (API) for Sliding Window FEC Codes</title>
+<meta content="Vincent Roca" name="author">
+<meta content="Jonathan Detchart" name="author">
+<meta content="Cedric Adjih" name="author">
+<meta content="Morten V. Pedersen" name="author">
+<meta content="
+       
+This document introduces a generic Application Programming Interface (API) for sliding window FEC codes.
+This API is meant to be compatible with any sliding window FEC code.
+It defines the core procedures and functions meant to control the codec (i.e., implementation of the FEC code).
+However, it leaves out all upper layer aspects that are the responsibility of the application or protocol making use of the codec.
+As a consequence, this is not an API for a FEC Scheme since certain mechanisms that must be defined by any FEC Scheme (e.g., signalling and FEC Payload IDs) are the responsibility of the caller instead of being addressed by the codec.
+A first goal of this document is to pave the way for a future open-source implementation of such codes, another goal is to simplify the development of content delivery protocols that rely on sliding window FEC codes for robust transmissions.
+ 
+    " name="description">
+<meta content="xml2rfc 2.35.0" name="generator">
+<meta content="draft-roca-nwcrg-generic-fec-api-07" name="ietf.draft">
+<link href="draft-roca-nwcrg-generic-fec-api-07.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">/*
+
+  NOTE: Changes at the bottom of this file overrides some earlier settings.
+
+  Once the style has stabilized and has been adopted as an official RFC style,
+  this can be consolidated so that style settings occur only in one place, but
+  for now the contents of this file consists first of the initial CSS work as
+  provided to the RFC Formatter (xml2rfc) work, followed by itemized and
+  commented changes found necssary during the development of the v3
+  formatters.
+
+*/
+
+/* fonts */
+@import url('https://fonts.googleapis.com/css?family=Noto+Sans'); /* Sans-serif */
+@import url('https://fonts.googleapis.com/css?family=Noto+Serif'); /* Serif (print) */
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono'); /* Monospace */
+
+@viewport {
+  zoom: 1.0;
+  width: extend-to-zoom;
+}
+@-ms-viewport {
+  width: extend-to-zoom;
+  zoom: 1.0;
+}
+/* general and mobile first */
+html {
+}
+body {
+  max-width: 90%;
+  margin: 1.5em auto;
+  color: #222;
+  background-color: #fff;
+  font-size: 14px;
+  font-family: 'Noto Sans', Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  scroll-behavior: smooth;
+}
+.ears {
+  display: none;
+}
+
+/* headings */
+#title, h1, h2, h3, h4, h5, h6 {
+  margin: 1em 0 0.5em;
+  font-weight: bold;
+  line-height: 1.3;
+}
+#title {
+  clear: both;
+  border-bottom: 1px solid #ddd;
+  margin: 0 0 0.5em 0;
+  padding: 1em 0 0.5em;
+}
+.author {
+  padding-bottom: 4px;
+}
+h1 {
+  font-size: 26px;
+  margin: 1em 0;
+}
+h2 {
+  font-size: 22px;
+  margin-top: -20px;  /* provide offset for in-page anchors */
+  padding-top: 33px;
+}
+h3 {
+  font-size: 18px;
+  margin-top: -36px;  /* provide offset for in-page anchors */
+  padding-top: 42px;
+}
+h4 {
+  font-size: 16px;
+  margin-top: -36px;  /* provide offset for in-page anchors */
+  padding-top: 42px;
+}
+h5, h6 {
+  font-size: 14px;
+}
+#n-copyright-notice {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 1em;
+  margin-bottom: 1em;
+}
+/* general structure */
+p {
+  padding: 0;
+  margin: 0 0 1em 0;
+  text-align: left;
+}
+div, span {
+  position: relative;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  padding: 1em 1em 0;
+  margin-bottom: 1.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+.alignCenter.art-text {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  padding: 1em 1em 0;
+  margin-bottom: 1.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 1em 2em;
+}
+ol ol, ul ul, ol ul, ul ol {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+ul.compact, .ulCompact,
+ol.compact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+/* 
+dl.nohang > dt {
+  float: none;
+}
+*/
+dl > dd {
+  margin-bottom: .8em;
+  min-height: 1.3em;
+}
+dl.compact > dd, .dlCompact > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+
+/* links */
+a {
+  text-decoration: none;
+}
+a[href] {
+  color: #22e; /* Arlen: WCAG 2019 */
+}
+a[href]:hover {
+  background-color: #f2f2f2;
+}
+figcaption a[href],
+a[href].selfRef {
+  color: #222;
+}
+/* XXX probably not this:
+a.selfRef:hover {
+  background-color: transparent;
+  cursor: default;
+} */
+
+/* Figures */
+tt, code, pre, code {
+  background-color: #f9f9f9;
+  font-family: 'Roboto Mono', monospace;
+}
+pre {
+  border: 1px solid #eee;
+  margin: 0;
+  padding: 1em;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption {
+  font-style: italic;
+  margin: 0 0 1em 0;
+}
+@media screen {
+  pre {
+    overflow-x: auto;
+    max-width: 100%;
+    max-width: calc(100% - 22px);
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 1.2em 2em;
+}
+blockquote {
+  background-color: #f9f9f9;
+  color: #111; /* Arlen: WCAG 2019 */
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  border: 1px solid #eee;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5em 0.75em;
+}
+th {
+  text-align: left;
+  background-color: #e9e9e9;
+}
+tr:nth-child(2n+1) > td {
+  background-color: #f5f5f5;
+}
+table caption {
+  font-style: italic;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+table p {
+  /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
+     be allowed within tables more generally, it would be far better to select on a class. */
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  color: #666; /* Arlen: AHDJ 2019 */
+  text-decoration: none;
+  visibility: hidden;
+  user-select: none;
+  -ms-user-select: none;
+  -o-user-select:none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+@media screen {
+  aside:hover > a.pilcrow,
+  p:hover > a.pilcrow,
+  blockquote:hover > a.pilcrow,
+  div:hover > a.pilcrow,
+  li:hover > a.pilcrow,
+  pre:hover > a.pilcrow {
+    visibility: visible;
+  }
+  a.pilcrow:hover {
+    background-color: transparent;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid #eee;
+}
+.bcp14 {
+  font-variant: small-caps;
+}
+
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: 0.9em;
+}
+#identifiers dt {
+  width: 3em;
+  clear: left;
+}
+#identifiers dd {
+  float: left;
+  margin-bottom: 0;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #666; /* Arlen: WCAG 2019 */
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc  {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+nav.toc ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+nav.toc li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+.index ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+  list-style: none;
+}
+.index ul ul {
+  margin: 0;
+}
+.index li {
+  margin: 0;
+  text-indent: -2em;
+  padding-left: 2em;
+  padding-bottom: 5px;
+}
+.indexIndex {
+  margin: 0.5em 0 1em;
+}
+.index a {
+  font-weight: 700;
+}
+/* make the index two-column on all but the smallest screens */
+@media (min-width: 600px) {
+  .index ul {
+    -moz-column-count: 2;
+    -moz-column-gap: 20px;
+  }
+  .index ul ul {
+    -moz-column-count: 1;
+    -moz-column-gap: 0;
+  }
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  font-family: "Noto Sans",Arial,Helvetica,sans-serif;
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+
+/* temporary notes */
+.rfcEditorRemove::before {
+  position: absolute;
+  top: 0.2em;
+  right: 0.2em;
+  padding: 0.2em;
+  content: "The RFC Editor will remove this note";
+  color: #9e2a00; /* Arlen: WCAG 2019 */
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+}
+.rfcEditorRemove {
+  position: relative;
+  padding-top: 1.8em;
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+  border-radius: 3px;
+}
+.cref {
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 1023px) {
+  body {
+    padding-top: 2em;
+  }
+  #title {
+    padding: 1em 0;
+  }
+  h1 {
+    font-size: 24px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-top: -18px;  /* provide offset for in-page anchors */
+    padding-top: 38px;
+  }
+  #identifiers dd {
+    max-width: 60%;
+  }
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    background-color: inherit;
+    border-bottom: 1px solid #ccc;
+  }
+  #toc h2 {
+    margin: -1px 0 0 0;
+    padding: 4px 0 4px 6px;
+    padding-right: 1em;
+    min-width: 190px;
+    font-size: 1.1em;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 6px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 1024px) {
+  body {
+    max-width: 724px;
+    margin: 42px auto;
+    padding-left: 1.5em;
+    padding-right: 29em;
+  }
+  #toc {
+    position: fixed;
+    top: 42px;
+    right: 42px;
+    width: 25%;
+    margin: 0;
+    padding: 0 1em;
+    z-index: 1;
+  }
+  #toc h2 {
+    border-top: none;
+    border-bottom: 1px solid #ddd;
+    font-size: 1em;
+    font-weight: normal;
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 0;
+    overflow: auto;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+/* This is commented out here, as the string-set: doesn't
+   pass W3C validation currently */
+/*
+.ears thead .left {
+  string-set: ears-top-left content();
+}
+
+.ears thead .center {
+  string-set: ears-top-center content();
+}
+
+.ears thead .right {
+  string-set: ears-top-right content();
+}
+
+.ears tfoot .left {
+  string-set: ears-bottom-left content();
+}
+
+.ears tfoot .center {
+  string-set: ears-bottom-center content();
+}
+
+.ears tfoot .right {
+  string-set: ears-bottom-right content();
+}
+*/
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+  /* The follwing is commented out here, but set appropriately by in code, as
+     the content depends on the document */
+  /*
+  @top-left {
+    content: 'Internet-Draft';
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-left {
+    content: string(ears-top-left);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-center {
+    content: string(ears-top-center);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-right {
+    content: string(ears-top-right);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @bottom-left {
+    content: string(ears-bottom-left);
+    vertical-align: top;
+    border-top: solid 1px #ccc;
+  }
+  @bottom-center {
+    content: string(ears-bottom-center);
+    vertical-align: top;
+    border-top: solid 1px #ccc;
+  }
+  @bottom-right {
+      content: '[Page ' counter(page) ']';
+      vertical-align: top;
+      border-top: solid 1px #ccc;
+  }
+  */
+
+}
+
+/* Changes introduced to fix issues found during implementation */
+/* Make sure links are clickable even if overlapped by following H* */
+a {
+  z-index: 2;
+}
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Leave room in document info to show Internet-Draft on one line */
+#identifiers dt {
+  width: 8em;
+}
+
+/* Don't waste quite as much whitespace between label and value in doc info */
+#identifiers dd {
+  margin-left: 1em;
+}
+
+/* Give floating toc a background color (needed when it's a div inside section */
+#toc {
+  background-color: white;
+}
+
+/* Make the collapsed ToC header render white on gray also when it's a link */
+@media screen and (max-width: 1023px) {
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+}
+
+/* Give the bottom of the ToC some whitespace */
+@media screen and (min-width: 1024px) {
+  #toc {
+    padding: 0 0 1em 1em;
+  }
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* prevent monospace from becoming overly large */
+tt, code, pre, code {
+  font-size: 95%;
+}
+
+/* Fix the height/width aspect for ascii art*/
+pre.sourcecode,
+.art-text pre {
+  line-height: 1.12;
+}
+
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin-right: 0.5em;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table td.text-left,
+table th.text-left {
+  text-align: left;
+}
+table td.text-center,
+table th.text-center {
+  text-align: center;
+}
+table td.text-right,
+table th.text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact informatio look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 30em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Provide table alignment support.  We can't use the alignX classes above
+   since they do unwanted things with caption and other styling. */
+table.right {
+ margin-left: auto;
+ margin-right: 0;
+}
+table.center {
+ margin-left: auto;
+ margin-right: auto;
+}
+table.left {
+ margin-left: 0;
+ margin-right: auto;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+caption a[href] {
+  color: #222;
+}
+
+@media print {
+  .toplink {
+    display: none;
+  }
+
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
+
+  /* Avoid page breaks inside dl and author address entries */
+  .vcard {
+    page-break-inside: avoid;
+  }
+
+}
+/* Avoid wrapping of URLs in references */
+@media screen {
+  .references a {
+    white-space: nowrap;
+  }
+}
+/* Tweak the bcp14 keyword presentation */
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+/* Tweak the invisible space above H* in order not to overlay links in text above */
+ h2 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 31px;
+ }
+ h3 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 24px;
+ }
+ h4 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 24px;
+ }
+/* Float artwork pilcrow to the right */
+@media screen {
+  .artwork a.pilcrow {
+    display: block;
+    line-height: 0.7;
+    margin-top: 0.15em;
+  }
+}
+/* Make pilcrows on dd visible */
+@media screen {
+  dd:hover > a.pilcrow {
+    visibility: visible;
+  }
+}
+/* Make the placement of figcaption match that of a table's caption
+   by removing the figure's added bottom margin */
+.alignLeft.art-text,
+.alignCenter.art-text,
+.alignRight.art-text {
+   margin-bottom: 0;
+}
+.alignLeft,
+.alignCenter,
+.alignRight {
+  margin: 1em 0 0 0;
+}
+/* In print, the pilcrow won't show on hover, so prevent it from taking up space,
+   possibly even requiring a new line */
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+/* Styling for the external metadata */
+div#external-metadata {
+  background-color: #eee;
+  padding: 0.5em;
+  margin-bottom: 0.5em;
+  display: none;
+}
+div#internal-metadata {
+  padding: 0.5em;                       /* to match the external-metadata padding */
+}
+/* Styling for title RFC Number */
+h1#rfcnum {
+  clear: both;
+  margin: 0 0 -1em;
+  padding: 1em 0 0 0;
+}
+/* Make .olPercent look the same as <ol><li> */
+dl.olPercent > dd {
+  margin: 0 0 0.25em 0;
+  min-height: initial;
+}
+/* Give aside some styling to set it apart */
+aside {
+  border-left: 1px solid #ddd;
+  margin: 1em 0 1em 2em;
+  padding: 0.2em 2em;
+}
+aside > dl,
+aside > ol,
+aside > ul,
+aside > table,
+aside > p {
+  margin-bottom: 0;
+}
+/* Additional page break settings */
+@media print {
+  figcaption, table caption {
+    page-break-before: avoid;
+  }
+}
+/* Font size adjustments for print */
+@media print {
+  body  { font-size: 10pt;      line-height: normal; max-width: 96%; }
+  h1    { font-size: 1.72em;    padding-top: 1.5em; } /* 1*1.2*1.2*1.2 */
+  h2    { font-size: 1.44em;    padding-top: 1.5em; } /* 1*1.2*1.2 */
+  h3    { font-size: 1.2em;     padding-top: 1.5em; } /* 1*1.2 */
+  h4    { font-size: 1em;       padding-top: 1.5em; }
+  h5, h6 { font-size: 1em;      margin: initial; padding: 0.5em 0 0.3em; }
+}
+/* Sourcecode margin in print, when there's no pilcrow */
+@media print {
+  .sourcecode {
+    margin-bottom: 1em;
+  }
+}</style>
+<link href="rfc-local.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<script src="metadata.min.js"></script>
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">Generic API</td>
+<td class="right">November 2019</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Roca (Ed.), et al.</td>
+<td class="center">Expires 21 May 2020</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">NWCRG</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-roca-nwcrg-generic-fec-api-07</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2019-11-18" class="published">18 November 2019</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2020-05-21">21 May 2020</time></dd>
+<dt class="label-authors">Authors:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">V. Roca (Ed.)</div>
+<div class="org">INRIA</div>
+</div>
+<div class="author">
+      <div class="author-name">J. Detchart</div>
+<div class="org">ISAE - Supaero</div>
+</div>
+<div class="author">
+      <div class="author-name">C. Adjih</div>
+<div class="org">INRIA</div>
+</div>
+<div class="author">
+      <div class="author-name">M. Pedersen</div>
+<div class="org">Steinwurf ApS</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Generic Application Programming Interface (API) for Sliding Window FEC Codes</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">
+This document introduces a generic Application Programming Interface (API) for sliding window FEC codes.
+This API is meant to be compatible with any sliding window FEC code.
+It defines the core procedures and functions meant to control the codec (i.e., implementation of the FEC code).
+However, it leaves out all upper layer aspects that are the responsibility of the application or protocol making use of the codec.
+As a consequence, this is not an API for a FEC Scheme since certain mechanisms that must be defined by any FEC Scheme (e.g., signalling and FEC Payload IDs) are the responsibility of the caller instead of being addressed by the codec.
+A first goal of this document is to pave the way for a future open-source implementation of such codes, another goal is to simplify the development of content delivery protocols that rely on sliding window FEC codes for robust transmissions.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 21 May 2020.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2019 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Simplified BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Simplified BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a><a href="#section-toc.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="toc ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-definitions-and-abbreviatio" class="xref">Definitions and Abbreviations</a><a href="#section-toc.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="toc ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-al-fec-codes-and-mechanisms" class="xref">AL-FEC Codes and Mechanisms Considered by the Generic API</a><a href="#section-toc.1-1.3.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-mechanisms-considered-or-ig" class="xref">Mechanisms Considered or Ignored by the API</a><a href="#section-toc.1-1.3.2.1.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</li>
+          <li class="toc ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-generic-api-for-sliding-win" class="xref">Generic API for Sliding Window FEC Codes</a><a href="#section-toc.1-1.4.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="xref">4.1</a>.  <a href="#name-general-definitions-common-" class="xref">General Definitions Common to the Encoder and Decoder</a><a href="#section-toc.1-1.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="toc ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="xref">4.2</a>.  <a href="#name-encoder" class="xref">Encoder</a><a href="#section-toc.1-1.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="toc ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="xref">4.3</a>.  <a href="#name-decoder" class="xref">Decoder</a><a href="#section-toc.1-1.4.2.3.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="toc ulEmpty" id="section-toc.1-1.4.2.4">
+                <p id="section-toc.1-1.4.2.4.1"><a href="#section-4.4" class="xref">4.4</a>.  <a href="#name-coding-window-functions-at-" class="xref">Coding Window Functions at an Encoder and Decoder</a><a href="#section-toc.1-1.4.2.4.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="toc ulEmpty" id="section-toc.1-1.4.2.5">
+                <p id="section-toc.1-1.4.2.5.1"><a href="#section-4.5" class="xref">4.5</a>.  <a href="#name-coding-coefficients-functio" class="xref">Coding Coefficients Functions at an Encoder and Decoder</a><a href="#section-toc.1-1.4.2.5.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</li>
+          <li class="toc ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-security-considerations" class="xref">Security Considerations</a><a href="#section-toc.1-1.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="toc ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-iana-considerations" class="xref">IANA Considerations</a><a href="#section-toc.1-1.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="toc ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-acknowledgments" class="xref">Acknowledgments</a><a href="#section-toc.1-1.7.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="toc ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-references" class="xref">References</a><a href="#section-toc.1-1.8.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.8.2.1">
+                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="xref">8.1</a>.  <a href="#name-normative-references" class="xref">Normative References</a><a href="#section-toc.1-1.8.2.1.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="toc ulEmpty" id="section-toc.1-1.8.2.2">
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="xref">8.2</a>.  <a href="#name-informative-references" class="xref">Informative References</a><a href="#section-toc.1-1.8.2.2.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</li>
+          <li class="toc ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-appendix.a" class="xref"></a><a href="#name-authors-addresses" class="xref">Authors' Addresses</a><a href="#section-toc.1-1.9.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">
+Forward Erasure Correction (FEC) codes are a key element of communication systems, used to efficiently recover from packet losses during content delivery sessions.
+Among the FEC codes working at the network and higher layers, one can broadly distinguish block codes and sliding window codes.
+Block FEC codes require the data flow coming from the application to be segmented into blocks of a predefined maximum size, before generating a certain number of repair packets.
+With the second type of FEC codes, an encoding window continuously slides over the set of source data and repair packets are generated at any time by computing for instance a linear combination of data present in the encoding window.
+This fundamental difference seriously impacts the way they can be used by a content delivery protocol or application.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">
+This document introduces a generic Application Programming Interface (API) for sliding window FEC codes.
+This API is meant to be usable by any sliding window FEC code and FEC Scheme independently of the protocol that may rely on it.
+This API defines the core procedures and functions meant to control the codec (i.e., implementation of the FEC code), but leaves out all upper layer aspects that are the responsibility of the application making use of the codec.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">
+This API is meant to be usable by any sliding window FEC code.
+
+
+independently of the FEC Scheme or network coding protocol that may rely on it
+This API defines the core procedures and functions meant to control the codec (i.e., implementation of the FEC code), but leaves out all upper layer aspects that are the responsibility of the application making use of the codec.
+For instance, those restricted to end-to-end use-cases as well as those compatible with in-network re-encoding use-cases.
+Additionally, this API is not impacted by the intra-flow versus inter-flow nature of the use-case, nor is it impacted by the single-path versus multi-paths nature of the use-case, since those are usage considerations under the responsibility of the caller.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<p id="section-1-4">
+A goal of this document is to pave the way for a future open-source implementation of such codes.<a href="#section-1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="definitionsAndAbbreviations">
+<section id="section-2">
+      <h2 id="name-definitions-and-abbreviatio">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-definitions-and-abbreviatio" class="section-name selfRef">Definitions and Abbreviations</a>
+      </h2>
+<p id="section-2-1">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+document are to be interpreted as described in <span>[<a href="#RFC2119" class="xref">RFC2119</a>]</span>.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">This document uses the following definitions and abbreviations:<a href="#section-2-2" class="pilcrow">¶</a></p>
+<dl class="dlParallel dlCompact" id="section-2-3">
+        <dt id="section-2-3.1"></dt>
+        <dd id="section-2-3.2"> XXX<a href="#section-2-3.2" class="pilcrow">¶</a>
+</dd>
+</dl>
+</section>
+</div>
+<div id="mechanismsConsidered">
+<section id="section-3">
+      <h2 id="name-al-fec-codes-and-mechanisms">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-al-fec-codes-and-mechanisms" class="section-name selfRef">AL-FEC Codes and Mechanisms Considered by the Generic API</a>
+      </h2>
+<p id="section-3-1">
+This generic FEC API is meant to be used with:<a href="#section-3-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-3-2.1">sliding window codes, that manage an encoding window (of fixed or variable size) that slides over the set of source symbols at the sender.
+ On the opposite, block codes (e.g., Reed-Solomon, LDPC, Raptor(Q)) are out of scope;<a href="#section-3-2.1" class="pilcrow">¶</a>
+</li>
+        <li id="section-3-2.2">codes that are restricted to use-cases that involve a single encoding point and a single decoding point (i.e., FEC operations are carried out either within the end-hosts or middle-boxes), as well as codes that can be used with use-cases that involve in-network re-coding operations;<a href="#section-3-2.2" class="pilcrow">¶</a>
+</li>
+        <li id="section-3-2.3">use-cases that are limited to an intra-flow coding (simple case), as well as use-cases that involve inter-flow coding.
+ This second case is more complex to address (e.g., with questions such as how to identify a packet of a flow?) however this is the responsibility of the application or protocol using this codec and not the codec itself.
+ This aspect is therefore transparent to the API;<a href="#section-3-2.3" class="pilcrow">¶</a>
+</li>
+        <li id="section-3-2.4">use-cases that are limited to single-path communications and use-cases that consider multi-path communications.
+ Here also this is a usage consideration that is transparent to the API;<a href="#section-3-2.4" class="pilcrow">¶</a>
+</li>
+        <li id="section-3-2.5">use-cases that involve a dynamic adaptation of the codec parameters (e.g., its code rate because the communication path losses is known thanks to feedbacks and an appropriate strategy can be defined);<a href="#section-3-2.5" class="pilcrow">¶</a>
+</li>
+        <li id="section-3-2.6">fixed code rate or not FEC codes, including rateless codes where the number of repair symbols that can be generated is huge (in theory unlimited);<a href="#section-3-2.6" class="pilcrow">¶</a>
+</li>
+        <li id="section-3-2.7">ideal (MDS) or non-ideal (non-MDS) codes. However most of the time, sliding window codes are non-ideal codes, meaning that slightly more than l repair symbols may be required to recover all the l lost source symbols;<a href="#section-3-2.7" class="pilcrow">¶</a>
+</li>
+      </ul>
+<p id="section-3-3">
+A key question is to determine what mechanisms are included in the codec and what mechanisms are left to the responsibility of the caller (i.e., an application or a protocol making use of this codec) (<a href="#fig_codec_vs_fec_scheme_anc_protocol" class="xref">Figure 1</a>).
+More precisely, an FEC Scheme (such as the RLC FEC Scheme <span>[<a href="#RLC" class="xref">RLC</a>]</span> in case of FECFRAME <span>[<a href="#fecframe-ext" class="xref">fecframe-ext</a>]</span>) defines all the internal code details in order to enable interoperable implementations, but also signaling considerations that are essential to use them in a specific context.<a href="#section-3-3" class="pilcrow">¶</a></p>
+<span id="name-position-of-the-fec-codec-a"></span><div id="fig_codec_vs_fec_scheme_anc_protocol">
+<figure id="figure-1">
+        <div class="artwork art-text alignLeft" id="section-3-4.1">
+<pre>
++----------------------------------------------------------+
+|         Application / Protocol Mechanisms                |
+|                    (out of scope)                        |
+|                                                          |
+|            + - - - - - - - - - - - - - - - - - - - - - + |
+|                             FEC Scheme                   |
+|         +--|-------------------------------------------|-+
+|         |                                               
+|         |  |  &lt;----- FEC Codec API (this doc.) -----&gt;  |
+|         |    +---------------------------------------+  
+|         |  | |         Low Level FEC Codec           | |
+|         |    +---------------------------------------+  
++---------+  + - - - - - - - - - - - - - - - - - - - - - +
+</pre>
+</div>
+<figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
+<a href="#name-position-of-the-fec-codec-a" class="selfRef">Position of the FEC Codec API with respect to the low level FEC Codec, the FEC Scheme, the protocol and other caller services.</a>
+        </figcaption></figure>
+</div>
+<div id="mechanismsConsideredOrIgnored">
+<section id="section-3.1">
+        <h3 id="name-mechanisms-considered-or-ig">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-mechanisms-considered-or-ig" class="section-name selfRef">Mechanisms Considered or Ignored by the API</a>
+        </h3>
+<p id="section-3.1-1">
+Applying FEC coding, through an FEC Scheme, in a given protocol to improve transmission robustness involves many mechanisms.
+However, these mechanisms are not all the responsibility of the codec and can be implemented within the application or within the protocol that uses this FEC codec.
+For instance, the following mechanisms are considered **out of scope of the API**, being implemented by the caller, without any impact on the codec:<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-3.1-2.1"> memory management;<a href="#section-3.1-2.1" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-2.2"> packet transmission and reception;<a href="#section-3.1-2.2" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-2.3"> signaling header creation / parsing;<a href="#section-3.1-2.3" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-2.4"> ADU to source symbol mapping;<a href="#section-3.1-2.4" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-2.5"> code rate adjustment, for instance thanks to the knowledge of losses at a receiver via feedbacks;<a href="#section-3.1-2.5" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-2.6"> selective ACK creation and parsing;<a href="#section-3.1-2.6" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-2.7"> congestion control.<a href="#section-3.1-2.7" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-3.1-3">
+The following mechanisms are **within scope of the API**:<a href="#section-3.1-3" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-3.1-4.1"> session management (sender and receiver);<a href="#section-3.1-4.1" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-4.2"> encoding window management (sender and receiver);<a href="#section-3.1-4.2" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-4.3"> set/get/generate coding coefficients (sender and receiver);<a href="#section-3.1-4.3" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-4.4"> build coded symbol (sender only);<a href="#section-3.1-4.4" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.1-4.5"> decode with newly received source or repair symbol (receiver only);<a href="#section-3.1-4.5" class="pilcrow">¶</a>
+</li>
+        </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="genericAPI">
+<section id="section-4">
+      <h2 id="name-generic-api-for-sliding-win">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-generic-api-for-sliding-win" class="section-name selfRef">Generic API for Sliding Window FEC Codes</a>
+      </h2>
+<p id="section-4-1">
+The following sections describe the generic API, following a C-language formalism.
+This API tries to adhere to C99 version of C, although it may not strictly be guaranteed.
+Everything is prefixed by "swif" (sliding window FEC).<a href="#section-4-1" class="pilcrow">¶</a></p>
+<section id="section-4.1">
+        <h3 id="name-general-definitions-common-">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-general-definitions-common-" class="section-name selfRef">General Definitions Common to the Encoder and Decoder</a>
+        </h3>
+<p id="section-4.1-1">
+This section gathers general definitions that are used by both an encoder and decoder.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">
+About FEC Codepoints:<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<dl class="dlParallel dlCompact" id="section-4.1-3">
+          <dt id="section-4.1-3.1"></dt>
+          <dd id="section-4.1-3.2"> 
+An application first needs to negotiate with its remote side the right FEC Scheme to use.
+This negotiation usually relies on the FEC Encoding ID associated to this FEC Scheme for this application.
+A difficulty is that the FEC Encoding ID space, associated to an IANA registry, is protocol specific and the same value are usually
+associated to different FEC Schemes depending on the protocol.
+For instance, the FEC Encoding ID value 2 may be used for two totally different FEC Schemes in protocol A and protocol B.
+Therefore, the FEC Encoding ID, from the Generic FEC API point of view, cannot be used to uniquely identify the target codec.<a href="#section-4.1-3.2" class="pilcrow">¶</a>
+</dd>
+<dt id="section-4.1-3.3"></dt>
+          <dd id="section-4.1-3.4">
+The use of a codepoint to identify locally the right FEC codec requires that the application knows a mapping between
+the FEC Encoding ID it uses for a given protocol, and the local FEC Codepoints corresponding to available codecs.
+This will be done at development time, the FEC API header file giving access to the swif_codepoint_t enumeration with
+the list of all codecs available locally.<a href="#section-4.1-3.4" class="pilcrow">¶</a>
+</dd>
+</dl>
+<span id="name-general-definitions"></span><figure id="figure-2">
+          <div id="section-4.1-4.1">
+<pre class="sourcecode">&lt;CODE BEGINS&gt;
+/**
+ * Return value of any function.
+ *
+ * SWIF_STATUS_OK = 0   Success
+ * SWIF_STATUS_FAILURE  Failure. The function called did not succeed to
+ *                      perform its task, however this is not an error
+ *                      (e.g., it happens when decoding fails).
+ * SWIF_STATUS_ERROR    Generic error type. The detailed error type is
+ *                      stored in the errno variable of swif_encoder_t and
+ *                      swif_decoder_t structures.
+ */
+typedef enum {
+        SWIF_STATUS_OK = 0,
+        SWIF_STATUS_FAILURE,
+        SWIF_STATUS_ERROR
+} swif_status_t;
+
+
+/**
+ * Potential errors.
+ */
+typedef enum {
+        SWIF_ERRNO_NULL = 0,            /* everything is fine */
+        SWIF_ERRNO_UNSUPPORTED_CODEPOINT,
+        /* and many more... */
+} swif_errno_t;
+
+
+/**
+ * FEC Codepoints.
+ * These identifiers are opaque identifiers that fully identify an FEC
+ * code locally, including certain parameters like its Galois Field.
+ * These codepoints are codec specific and only have a local meaning.
+ * They should not be transmitted as different implementations may use
+ * them inconsistently.
+ * Note that the same FEC code may be used by several FEC Encoding IDs
+ * and therefore share the same codepoint. On the opposite multiple
+ * implementations of a given FEC code may exist locally, for instance
+ * with different optimizations, and then several codepoints, one per
+ * codec, will exist for the same FEC code. The following names are
+ * therefore only provided as examples.
+ */
+typedef enum {
+        SWIF_CODEPOINT_NULL = 0,        /* codepoint 0 is reserved */
+
+        /* codepoint for sliding window codec AAA. */
+        SWIF_CODEPOINT_AAA_CODEC,
+
+        /* codepoint for sliding window codec BBB. */
+        SWIF_CODEPOINT_BBB_CODEC,
+
+        /* list here other identifiers for any codec of interest... */
+} swif_codepoint_t;
+
+
+/**
+ * Encoding Symbol Identifier (ESI) generic type. 
+ * With Sliding Window FEC codes, an ESI is in fact a source symbol
+ * identifier, unlike block FEC codes.
+ */
+typedef uint32_t        esi_t;
+
+
+/**
+ * Throughout the API, a pointer to this structure is used as an
+ * identifier of the encoder instance (or "enc").
+ *
+ * This generic structure is meant to be extended by each codec with
+ * new pieces of information that are specific to each codec.
+ */
+typedef struct swif_encoder {
+        swif_codepoint_t        codepoint;
+
+        /* when a function returns with SWIF_STATUS_ERROR, the errno
+         * variable contains a more detailed error type. This variable
+         * is set by the codec and accessible to the application in
+         * READ ONLY mode. Otherwise its value is undefined. */
+        swif_errno_t            swif_errno;
+
+        /* pointers to codec specific versions of API functions. */
+        swif_status_t   (*set_callback_functions) (
+                struct swif_encoder*, void (*) (void*, esi_t), void*);
+        swif_status_t   (*set_parameters)  (
+                struct swif_encoder*, uint32_t, uint32_t, void*);
+        swif_status_t   (*get_parameters)  (
+                struct swif_encoder*, uint32_t, uint32_t, void*);
+        swif_status_t   (*build_repair_symbol) (
+                struct swif_encoder*, void*);
+        swif_status_t   (*reset_coding_window) (struct swif_encoder*);
+        swif_status_t   (*add_source_symbol_to_coding_window) (
+                struct swif_encoder*, void*, esi_t);
+        swif_status_t   (*remove_source_symbol_from_coding_window) (
+                struct swif_encoder*, esi_t);
+        swif_status_t   (*get_coding_window_information) (
+                struct swif_encoder*, esi_t*, esi_t*, uint32_t*);
+        swif_status_t   (*set_coding_coefs_tab) (
+                struct swif_encoder*, void*, uint32_t);
+        swif_status_t   (*generate_coding_coefs) (
+                struct swif_encoder*, uint32_t, uint32_t);
+        swif_status_t   (*get_coding_coefs_tab) (
+                struct swif_encoder*, void**, uint32_t*);
+} swif_encoder_t;
+
+
+/**
+ * Decoder structure that contains whatever is needed for decoding.
+ * The exact content of this structure is FEC code dependent, the
+ * structure below being a non normative example.
+ */
+typedef struct swif_decoder {
+        swif_codepoint_t        codepoint;
+
+        /* when a function returns with SWIF_STATUS_ERROR, the errno
+         * variable contains a more detailed error type. This variable
+         * is set by the codec and accessible to the application in
+         * READ ONLY mode. Otherwise its value is undefined. */
+        swif_errno_t            swif_errno;
+
+        /* pointers to codec specific versions of API functions. */
+        swif_status_t   (*set_callback_functions) (
+                struct swif_decoder*, void (*) (void*, esi_t),
+                void* (*) (void*, esi_t),
+                void* (*) (void*, void*, esi_t), void*);
+        swif_status_t   (*set_parameters)  (
+                struct swif_decoder*, uint32_t, uint32_t, void*);
+        swif_status_t   (*get_parameters)  (
+                struct swif_decoder*, uint32_t, uint32_t, void*);
+        swif_status_t   (*decode_with_new_source_symbol) (
+                struct swif_decoder*, void* const, esi_t);
+        swif_status_t   (*decode_with_new_repair_symbol) (
+                struct swif_decoder*, void* const);
+        swif_status_t   (*reset_coding_window) (swif_encoder_t*);
+        swif_status_t   (*add_source_symbol_to_coding_window) (
+                struct swif_decoder*, esi_t);
+        swif_status_t   (*remove_source_symbol_from_coding_window) (
+                struct swif_decoder*, esi_t);
+        swif_status_t   (*set_coding_coefs_tab) (
+                struct swif_decoder*, void*, uint32_t);
+        swif_status_t   (*generate_coding_coefs) (
+                struct swif_decoder*, uint32_t, uint32_t);
+} swif_decoder_t;
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.1-4.1" class="pilcrow">¶</a>
+</div>
+<figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
+<a href="#name-general-definitions" class="selfRef">General definitions.</a>
+          </figcaption></figure>
+</section>
+<section id="section-4.2">
+        <h3 id="name-encoder">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-encoder" class="section-name selfRef">Encoder</a>
+        </h3>
+<span id="name-encoder-api-proposal"></span><figure id="figure-3">
+          <div id="section-4.2-1.1">
+<pre class="sourcecode">&lt;CODE BEGINS&gt;
+/**
+ * Create and initialize an encoder, providing only key parameters.
+ *
+ * @param codepoint     opaque identifier that fully identifies the FEC
+ *                      code to use.
+ * @param verbosity     print information on the codec processing.
+ *                      0 is the minimum verbosity, the maximum verbosity
+ *                      level being implementation specific.
+ * @param symbol_size   source and repair symbol size in bytes. Cannot
+ *                      change during the codec instance lifetime.
+ * @param max_encoding_window_size
+ * @return              pointer to a swif_encoder_t structure if okay, or
+ *                      NULL in case of error.
+ **/
+swif_encoder_t* swif_encoder_create (
+                                swif_codepoint_t codepoint,
+                                uint32_t        verbosity,
+                                uint32_t        symbol_size,
+                                uint32_t        max_coding_window_size);
+
+
+/**
+ * Release an encoder and its associated ressources.
+ **/
+swif_status_t   swif_encoder_release (swif_encoder_t*        enc);
+
+
+/**
+ * Set the various callback functions for this encoder.
+ * All the callback functions require an opaque context parameter, that
+ * must be initialized accordingly by the application, since it is
+ * application specific.
+ *
+ * @param enc
+ * @param source_symbol_removed_from_coding_window_callback
+ *              (IN) Pointer to the function, within the application,
+ *              that needs to be called each time a source symbol is
+ *              removed from the left side of the coding window.
+ *              This callback is called each time the encoding window
+ *              slides to the right and an old source symbol needs to
+ *              be removed on the left. The application therefore knows
+ *              this source symbol will no longer be used by the codec
+ *              and can free the associated buffer if need be. This
+ *              function does not return anything.
+ * @param context_4_callback
+ *              (IN) Pointer to the application-specific context that
+ *              will be passed to the callback function (if any). This
+ *              context is not interpreted by this function.
+ * @return
+ */
+swif_status_t   swif_encoder_set_callback_functions (
+                swif_encoder_t*         enc,
+                void (*source_symbol_removed_from_coding_window_callback) (
+                                        void*   context,
+                                        esi_t   old_symbol_esi),
+                void* context_4_callback);
+
+/**
+ * This function sets one or more FEC codec specific parameters,
+ * using a type/length/value approach for maximum flexibility.
+ *
+ * @param enc
+ * @param type          (IN) Type of parameter.
+ * @param length        (IN) length of the pointed value.
+ * @param value         (IN) Pointer to the value. The exact type of
+ *                      the object pointed is FEC codec specific.
+ * @return
+ */
+swif_status_t   swif_encoder_set_parameters  (
+                                swif_encoder_t* enc,
+                                uint32_t        type,
+                                uint32_t        length,
+                                void*           value);
+
+/**
+ * This function gets one or more FEC codec specific parameters,
+ * using a type/length/value approach for maximum flexibility.
+ *
+ * @param enc
+ * @param type          (IN) Type of parameter.
+ * @param length        (IN) length of the pointed value.
+ * @param value         (IN/OUT) Pointer to the value. The exact type of
+ *                      the object pointed is FEC codec specific.
+ *                      This function updates the value object
+ *                      accordingly. The caller, who knows the FEC codec,
+ *                      is responsible to allocate the appropriate
+ *                      object buffer.
+ * @return
+ */
+swif_status_t   swif_encoder_get_parameters  (
+                                swif_encoder_t* enc,
+                                uint32_t        type,
+                                uint32_t        length,
+                                void*           value);
+
+/**
+ * List here the FEC codec specific control parameters.
+ */
+enum {
+        swif_ENCODER_GET_PARAM_ENCODER_STATISTICS = 1,
+        swif_ENCODER_SET_PARAM_RLC_DENSITY_THRESHOLD
+};
+
+
+/**
+ * Create a single repair symbol (i.e. perform an encoding).
+ * Upon return of this function, the application has full control of the
+ * buffer and is in charge of freeing it when appropriate.
+ *
+ * @param new_buf       (IN) The pointer to the buffer for the repair
+ *                      symbol to build can either point to a buffer
+ *                      allocated by the application and initialized to
+ *                      zero, or let to NULL meaning that this function
+ *                      will allocate memory.
+ * @return
+ */
+swif_status_t   swif_build_repair_symbol (
+                                swif_encoder_t* enc,
+                                void*           new_buf);
+/* FIX ME: must be void** to enable returning a pointer to buffer! */
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.2-1.1" class="pilcrow">¶</a>
+</div>
+<figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
+<a href="#name-encoder-api-proposal" class="selfRef">Encoder API proposal</a>
+          </figcaption></figure>
+<span id="name-non-normative-example-of-in"></span><figure id="figure-4">
+          <div id="section-4.2-2.1">
+<pre class="sourcecode">&lt;CODE BEGINS&gt;
+/**
+ * Encoder structure that contains whatever is needed for encoding.
+ * The exact content of this structure is FEC code dependent, the
+ * structure below being a non normative example.
+ * However it MUST be aligned with swif_encoder_t (same first items) in
+ * order to be able to cast a pointer to one of the two structures,
+ * depending on the context.
+ */
+typedef struct swif_encoder_internal {
+        /* generic part of any control block. MUST be first in structure */
+        swif_encoder_t  gen;
+
+        /* desired verbosity: 0 is the minimum verbosity, the maximum
+         * level being implementation specific. */
+        uint32_t        verbosity;
+
+        /* maximum number of source symbols used for any repair symbol */
+        uint32_t        max_coding_window_size;
+
+        /* exact size (in bytes) of any source or repair symbol */
+        uint32_t        symbol_size;
+
+        /* add whatever may be needed hereafter... */
+} swif_encoder_internal_t;
+&lt;CODE ENDS&gt;</pre><a href="#section-4.2-2.1" class="pilcrow">¶</a>
+</div>
+<figcaption><a href="#figure-4" class="selfRef">Figure 4</a>:
+<a href="#name-non-normative-example-of-in" class="selfRef">Non normative example of internal structure used by an encoder.</a>
+          </figcaption></figure>
+</section>
+<section id="section-4.3">
+        <h3 id="name-decoder">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-decoder" class="section-name selfRef">Decoder</a>
+        </h3>
+<span id="name-decoder-api-proposal"></span><figure id="figure-5">
+          <div id="section-4.3-1.1">
+<pre class="sourcecode">&lt;CODE BEGINS&gt;
+/**
+ * Create and initialize a decoder, providing only key parameters.
+ *
+ * @param codepoint     opaque identifier that fully identifies the FEC
+ *                      code to use.
+ * @param verbosity     print information on the codec processing.
+ *                      0 is the minimum verbosity, the maximum verbosity
+ *                      level being implementation specific.
+ * @param symbol_size   source and repair symbol size in bytes. Cannot
+ *                      change during the codec instance lifetime.
+ * @param max_coding_window_size
+ * @param max_linear_system_size
+ * @return              pointer to a swif_decoder_t structure if okay, or
+ *                      NULL in case of error.
+ **/
+swif_decoder_t* swif_decoder_create (
+                                swif_codepoint_t codepoint,
+                                uint32_t        verbosity,
+                                uint32_t        symbol_size,
+                                uint32_t        max_coding_window_size,
+                                uint32_t        max_linear_system_size);
+
+
+/**
+ * Release a decoder and its associated ressources.
+ *
+ * @param dec        context (i.e., pointer to decoder structure).
+ **/
+swif_status_t   swif_decoder_release (swif_decoder_t*        dec);
+
+
+/**
+ * Set the various callback functions for this decoder.
+ * All the callback functions require an opaque context parameter, that
+ * must be initialized accordingly by the application, since it is
+ * application specific.
+ *
+ * @param dec   context (i.e., pointer to decoder structure).
+ * @param source_symbol_removed_from_linear_system_callback
+ *              (IN) Pointer to the function, within the application, that
+ *              needs to be called each time a source symbol is removed from
+ *              the left side of the linear system.
+ *              This callback is called each time the linear system slides
+ *              to the right and an old source symbol needs to be removed
+ *              on the left. This function does not return anything.
+ * @param decodable_source_symbol_callback
+ *              (IN) Pointer to the function, within the application, that
+ *              needs to be called each time a source symbol is decodable.
+ *              What it does is application-dependent, but it MUST return
+ *              either a pointer to a data buffer, left uninitialized, of
+ *              the appropriate size, or NULL if the application prefers to
+ *              let the codec allocate the buffer.
+ *              In any case the codec is responsible for storing the actual
+ *              symbol value within the data buffer. Also, no matter
+ *              whether the data buffer is allocated by the application or
+ *              the codec, it is the responsibility of the application to
+ *              free this buffer when needed, once decoding is over (but
+ *              not before since the codec does not keep any internal copy).
+ * @param decoded_source_symbol_callback
+ *              (IN) Pointer to the function, within the application, that
+ *              needs to be called each time a source symbol is decodable and
+ *              all computations performed (i.e., the buffer does contain the
+ *              symbol value).
+ *              This callback is called in a second time, when the newly
+ *              decodable source symbol is actually decoded and ready,
+ *              i.e., when all the computations (like XOR and GF(2**8)
+ *              operations) have been performed. In any case, it is the
+ *              responsibility of the application to free this buffer when
+ *              needed, once decoding is over (but not before since the
+ *              codec does not keep any internal copy). This function does
+ *              not return anything.
+ * @param context_4_callback
+ *              (IN) Pointer to the application-specific context that will be
+ *              passed to the callback function (if any). This context is not
+ *              interpreted by this function.
+ * @return
+ */
+swif_status_t   swif_decoder_set_callback_functions (
+                swif_decoder_t*  dec,
+                void (*source_symbol_removed_from_linear_system_callback) (
+                                        void*   context,
+                                        esi_t   old_symbol_esi),
+                void* (*decodable_source_symbol_callback) (
+                                        void    *context,
+                                        esi_t   esi),
+                void (*decoded_source_symbol_callback) (
+                                        void    *context,
+                                        void    *new_symbol_buf,
+                                        esi_t   esi),
+                void*        context_4_callback);
+
+
+/**
+ * This function sets one or more FEC codec specific parameters,
+ *        using a type/length/value approach for maximum flexibility.
+ *
+ * @param dec           context (i.e., pointer to decoder structure).
+ * @param type          (IN) Type of parameter.
+ * @param length        (IN) length of the pointed value.
+ * @param value         (IN) Pointer to the value. The exact type of
+ *                      the object pointed is FEC codec specific.
+ * @return
+ */
+swif_status_t   swif_decoder_set_parameters  (
+                                swif_decoder_t* dec,
+                                uint32_t        type,
+                                uint32_t        length,
+                                void*           value);
+
+/**
+ * This function gets one or more FEC codec specific parameters,
+ * using a type/length/value approach for maximum flexibility.
+ *
+ * @param dec           context (i.e., pointer to decoder structure).
+ * @param type          (IN) Type of parameter.
+ * @param length        (IN) length of the pointed value.
+ * @param value         (IN/OUT) Pointer to the value. The exact type of
+ *                      the object pointed is FEC codec specific.
+ *                      This function updates the value object
+ *                      accordingly. The caller, who knows the FEC codec,
+ *                      is responsible to allocate the appropriate
+ *                      object buffer.
+ * @return
+ */
+swif_status_t   swif_decoder_get_parameters  (
+                                swif_decoder_t* dec,
+                                uint32_t        type,
+                                uint32_t        length,
+                                void*           value);
+
+/**
+ * List here the FEC codec specific control parameters.
+ */
+enum {
+        swif_DECODER_GET_PARAM_DECODER_STATISTICS = 1,
+        swif_DECODER_SET_PARAM_RLC_DENSITY_THRESHOLD
+};
+
+
+/**
+ * Submit a received source symbol and try to progress in the decoding.
+ * For each decoded source symbol (if any), the application is informed
+ * through the dedicated callback functions.
+ * 
+ * This function usually returns SWIF_STATUS_OK, regardless of whether
+ * this new symbol enabled the decoding of one or several source symbols,
+ * or SWIF_STATUS_ERROR. It cannot return SWIF_STATUS_FAILURE.
+ *
+ * @param dec   context (i.e., pointer to decoder structure).
+ * @param new_symbol_buf
+ *              (IN) Pointer to the new source symbol now available (i.e.
+ *              a new symbol received by the application, or a decoded
+ *              symbol in case of a recursive call if it makes sense). 
+ * @param new_symbol_esi 
+ *              (IN) encoding symbol ID of the new source symbol.
+ * @return        
+ */
+swif_status_t   swif_decoder_decode_with_new_source_symbol (
+                                swif_decoder_t* dec,
+                                void* const     new_symbol_buf,
+                                esi_t           new_symbol_esi);
+
+
+/**
+ * Submit a received repair symbol and try to progress in the decoding.
+ * For each decoded source symbol (if any), the application is informed
+ * through the dedicated callback functions.
+ *
+ * This function requires that the application has previously initialized
+ * the coding window and coding coefficients appropriately. The application
+ * keeps a full control of the repair symbol buffer, i.e., the application
+ * is in charge of freeing this buffer as soon as it believes appropriate
+ * (a copy is kept by the codec). This is motivated by the fact that a
+ * repair symbol may be part of a larger buffer (e.g., if there are
+ * several repair symbols per packet, or because of a packet header): only
+ * the application knows when the buffer can be safely freed.
+ *
+ * This function usually returns SWIF_STATUS_OK, regardless of whether
+ * this new symbol enabled the decoding of one or several source symbols,
+ * or SWIF_STATUS_ERROR. It cannot return SWIF_STATUS_FAILURE.
+ * 
+ * @param dec   context (i.e., pointer to decoder structure).
+ * @param new_symbol_buf
+ *              (IN) Pointer to the new repair symbol now available (i.e.
+ *              a new symbol received by the application or a decoded
+ *              symbol in case of a recursive call if it makes sense).
+ * @return        
+ */
+swif_status_t   swif_decoder_decode_with_new_repair_symbol (
+                                swif_decoder_t* dec,
+                                void* const     new_symbol_buf);
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.3-1.1" class="pilcrow">¶</a>
+</div>
+<figcaption><a href="#figure-5" class="selfRef">Figure 5</a>:
+<a href="#name-decoder-api-proposal" class="selfRef">Decoder API proposal</a>
+          </figcaption></figure>
+<span id="name-non-normative-example-rlc-o"></span><figure id="figure-6">
+          <div id="section-4.3-2.1">
+<pre class="sourcecode">&lt;CODE BEGINS&gt;
+/**
+ * Decoder structure that contains whatever is needed for decoding.
+ * The exact content of this structure is FEC code dependent, the
+ * structure below being a non normative example.
+ * However it MUST be aligned with swif_decoder_t (same first items) in
+ * order to be able to cast a pointer to one of the two structures,
+ * depending on the context.
+ */
+typedef struct swif_decoder_internal {
+        /* generic part of any control block. MUST be first in structure */
+        swif_decoder_t  gen;
+
+        /* desired verbosity: 0 is the minimum verbosity, the maximum
+         * level being implementation specific. */
+        uint32_t        verbosity;
+
+        /* maximum number of source symbols used for any repair symbol */
+        uint32_t        max_coding_window_size;
+
+        /* max. number of source symbols kepts in current linear system.
+         * If the linear system grows above this limit, old source
+         * symbols in excess are removed and the application callback
+         * called. This value should be larger than the
+         * max_coding_window_size. */
+        uint32_t        max_linear_system_size;
+
+        /* exact size (in bytes) of any source or repair symbol */
+        uint32_t        symbol_size;
+
+        /* add whatever may be needed hereafter... */
+} swif_decoder_internal_t;
+&lt;CODE ENDS&gt;</pre><a href="#section-4.3-2.1" class="pilcrow">¶</a>
+</div>
+<figcaption><a href="#figure-6" class="selfRef">Figure 6</a>:
+<a href="#name-non-normative-example-rlc-o" class="selfRef">Non normative example (RLC) of internal structure used by a decoder.</a>
+          </figcaption></figure>
+</section>
+<section id="section-4.4">
+        <h3 id="name-coding-window-functions-at-">
+<a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-coding-window-functions-at-" class="section-name selfRef">Coding Window Functions at an Encoder and Decoder</a>
+        </h3>
+<p id="section-4.4-1">
+This section gathers functions used to manage the coding window, both at an encoder and at a decoder.
+At an encoder a sliding (of fixed or elastic size) encoding window is managed. Whenever a repair symbol needs to
+be created, a linear combination (that is code specific) of source symbols currently in the encoding window is
+performed. This encoding window is managed with the functions below plus, potentially, internal mechanisms that
+are code specific.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.4-2">
+At a decoder, before submitting a new repair symbol to the codec, the application must specify the associated
+encoding window used at the source. This is done by the reset/add a single or set of symbols/remove a symbol functions.
+Once this coding window is ready, as well as the coding coefficient list if applicable, the application calls
+the decode_with_new_repair_symbol() function. A coding window may be reused for several repair symbols as long as
+they are all built from the same set of source symbols. In that case resetting the coding window and setting it
+from scratch would be a waste of time. The coding window must be viewed as a temporary list used solely by the
+decode_with_new_repair_symbol() function and kept independent from the linear system managed by the codec.<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<span id="name-coding-window-functions-at-a"></span><figure id="figure-7">
+          <div id="section-4.4-3.1">
+<pre class="sourcecode">&lt;CODE BEGINS&gt;
+/**
+ * This function resets the current coding window. We assume here that
+ * this window is maintained by the FEC codec instance.
+ * Encoder:     reset the encoding window for the encoding of future
+ *              repair symbols.
+ * Decoder:     reset the coding window under preparation associated to
+ *              a repair symbol just received.
+ *
+ * @return
+ */
+swif_status_t   swif_encoder_reset_coding_window (swif_encoder_t*  enc);
+
+swif_status_t   swif_decoder_reset_coding_window (swif_decoder_t*  dec);
+
+
+/**
+ * Add this source symbol to the coding window.
+ * Encoder:     add a source symbol to the coding window.
+ * Decoder:     add a source symbol to the coding window under preparation.
+ *
+ * @param new_src_symbol_buf    (encoder only) pointer to a buffer
+ *              containing the source symbol. The application MUST NOT
+ *              free nor modify this buffer as long as the source symbol
+ *              is in the coding window.
+ * @param new_src_symbol_esi    ESI of the source symbol to add.
+ * @return
+ */
+swif_status_t   swif_encoder_add_source_symbol_to_coding_window (
+                                swif_encoder_t* enc,
+                                void*           new_src_symbol_buf,
+                                esi_t           new_src_symbol_esi);
+
+swif_status_t   swif_decoder_add_source_symbol_to_coding_window (
+                                swif_decoder_t* dec,
+                                esi_t           new_src_symbol_esi);
+
+
+/**
+ * Remove this source symbol from the coding window.
+ *
+ * Encoder:     remove a source symbol from the encoding window, e.g.
+ *              because the application knows that a source symbol has
+ *              been acknowledged by the peer (if applicable). Note that
+ *              the left side of the sliding window is automatically
+ *              managed by the codec and no action is needed from the
+ *              application. If needed a callback is available to inform
+ *              the application that a source symbol has been removed).
+ * Decoder:     remove a source symbol from the coding window under
+ *              preparation.
+ *
+ * @param old_src_symbol_esi    ESI of the source symbol to remove from
+ *              the coding window.
+ * @return
+ */
+swif_status_t   swif_encoder_remove_source_symbol_from_coding_window (
+                                swif_encoder_t* enc,
+                                esi_t           old_src_symbol_esi);
+
+swif_status_t   swif_decoder_remove_source_symbol_from_coding_window (
+                                swif_decoder_t* dec,
+                                esi_t           old_src_symbol_esi);
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.4-3.1" class="pilcrow">¶</a>
+</div>
+<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
+<a href="#name-coding-window-functions-at-a" class="selfRef">Coding Window Functions at an Encoder and Decoder.</a>
+          </figcaption></figure>
+</section>
+<section id="section-4.5">
+        <h3 id="name-coding-coefficients-functio">
+<a href="#section-4.5" class="section-number selfRef">4.5. </a><a href="#name-coding-coefficients-functio" class="section-name selfRef">Coding Coefficients Functions at an Encoder and Decoder</a>
+        </h3>
+<p id="section-4.5-1">
+This section gathers functions used to manage the coding coefficients, both at an encoder and at a decoder.
+Since different FEC codecs will have different requirements, it is important to keep these functions separate
+from the build_repair_symbol() and decode_with_new_repair_symbol() functions.
+Several situations exist:<a href="#section-4.5-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-4.5-2.1">the application provides the list of coding coefficients to use for the next build_repair_symbol();<a href="#section-4.5-2.1" class="pilcrow">¶</a>
+</li>
+          <li id="section-4.5-2.2">the application provides a key (typically a PRNG seed) that the codec uses to produce the coding coefficients to use for the next build_repair_symbol();<a href="#section-4.5-2.2" class="pilcrow">¶</a>
+</li>
+          <li id="section-4.5-2.3">the choice of the coding coefficients is totally performed by the codec, in an autonomous manner (e.g., the codec
+    includes an algorithm that produces an appropriate seed based on various criteria, or the codec selects a set of coding coefficients based on various criteria).
+    In that case the application needs to retrieve the list of coding coefficients or the key selected by the codec;<a href="#section-4.5-2.3" class="pilcrow">¶</a>
+</li>
+        </ul>
+<span id="name-coding-coefficients-function"></span><figure id="figure-8">
+          <div id="section-4.5-3.1">
+<pre class="sourcecode">&lt;CODE BEGINS&gt;
+/** 
+ * The following functions enable an encoder (resp. decoder) to
+ * initialize the set of coefficients to be used for encoding
+ * or associated to a received repair symbol.
+ *
+ * Encoder: calling one of them MUST be done before calling
+ *              build_repair_symbol().
+ * Decoder: calling one of them MUST be done before calling
+ *              decode_with_new_repair_symbol().
+ */
+
+/**
+ * Encoder: this function specifies the coding coefficients chosen by
+ *          the application if this is the way the codec works.
+ * Decoder: communicate with this function the coding coefficients
+ *          associated to a repair symbol and carried in the packet
+ *          header.
+ *
+ * @param coding_coefs_tab
+ *              (IN) table of coding coefficients associated to each of
+ *              the source symbols currently in the encoding window.
+ *              The size (number of bits) of each coefficient depends on
+ *              the FEC Scheme. The allocation and release of this table
+ *              is under the responsibility of the application.
+ * @param nb_coefs_in_tab      
+ *              (IN) number of entries (i.e., coefficients) in the table.
+ * @return
+ */
+swif_status_t   swif_encoder_set_coding_coefs_tab (
+                                swif_encoder_t* enc,
+                                void*           coding_coefs_tab,
+                                uint32_t        nb_coefs_in_tab);
+
+swif_status_t   swif_decoder_set_coding_coefs_tab (
+                                swif_decoder_t* dec,
+                                void*           coding_coefs_tab,
+                                uint32_t        nb_coefs_in_tab);
+
+
+/**
+ * The coding coefficients may be generated in a deterministic manner,
+ * for instance by a PRNG known by the codec and a seed (perhaps with
+ * other parameters) provided by the application.
+ * The codec may also choose in an autonomous manner these coefficients.
+ * This function is used to trigger this process.
+ * When the choice is made in an autonomous manner, the actual coding
+ * coefficient or key used by the codec can be retrieved with
+ * swif_encoder_get_coding_coefs_tab().
+ *
+ * @param key   (IN) Value that can be used as a seed in case of a PRNG
+ *              for instance, or by a specific coding coefficients
+ *              function. Set to 0 if not required by a codec.
+ * @param add_param
+ *              (IN) an opaque 32-bit integer that contains a codec
+ *              specific parameter if needed. Set to 0 if not used.
+ * @return
+ */
+swif_status_t   swif_encoder_generate_coding_coefs (
+                                swif_encoder_t* enc,
+                                uint32_t        key,
+                                uint32_t        add_param);
+
+swif_status_t   swif_decoder_generate_coding_coefs (
+                                swif_decoder_t* dec,
+                                uint32_t        key,
+                                uint32_t        add_param);
+
+
+/**
+ * This function enables the application to retrieve the set of coding
+ * coefficients generated and used by build_repair_symbol(). This is
+ * useful when the choice of coefficients is performed by the codec in
+ * an autonomous manner but needs to be sent in the repair packet header.
+ * This function is only used by an encoder.
+ *
+ * @param coding_coefs_tab
+ *              (OUT) pointer to a table of coding coefficients.
+ *              The size (number of bits) of each coefficient depends on
+ *              the FEC scheme. Upon return of this function, this table
+ *              is allocated and filled with coefficient values. The
+ *              release of this table is under the responsibility of the
+ *              application.
+ * @param nb_coefs_in_tab      
+ *              (IN/OUT) pointer to the number of entries (i.e.,
+ *              coefficients) in the table.
+ *              Upon calling this function, this number must be zero.
+ *              Upon return of this function this variable is initialized
+ *              with the actual number of entries in the coeffs_tab[].
+ * @return 
+ */
+swif_status_t   swif_encoder_get_coding_coefs_tab (
+                                swif_encoder_t* enc,
+                                void**          coding_coefs_tab,
+                                uint32_t*       nb_coefs_in_tab);
+
+
+/**
+ * Get information on the current coding window at the encoder.
+ * This function stores the ESI of the first source symbol and
+ * last source symbol in the coding window, as well as the number
+ * of symbols. In theory the application should be able to recover
+ * the information (it knows when new symbols are added and old
+ * symbols removed), but it's easier to let the SWiF Codec care
+ * about it. The number of source symbols is also returned.
+ * In situations where there's no gap (i.e., when
+ * swif_encoder_remove_source_symbol_from_coding_window() has not
+ * been used), nss can also be calculated with first/last. However
+ * it is more convenient to use nss directly (in particular in case
+ * of wraping to zero of either first or last).
+ *
+ * @param enc
+ * @param first         (in/out) pointer to ESI of the first source
+ *                      symbol in the coding window (inclusive)
+ * @param last          (in/out) pointer to ESI of the last source
+ *                      symbol in the coding window (inclusive)
+ * @param nss           (in/out) pointer to number of source symbols
+ *                      in the coding window
+ * @return
+ */
+swif_status_t   swif_encoder_get_coding_window_information (
+                                swif_encoder_t* enc,
+                                esi_t*          first,
+                                esi_t*          last,
+                                uint32_t*       nss);
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.5-3.1" class="pilcrow">¶</a>
+</div>
+<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
+<a href="#name-coding-coefficients-function" class="selfRef">Coding Coefficients Functions at an Encoder and Decoder.</a>
+          </figcaption></figure>
+</section>
+</section>
+</div>
+<div id="security">
+<section id="section-5">
+      <h2 id="name-security-considerations">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-5-1">
+TBD<a href="#section-5-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana">
+<section id="section-6">
+      <h2 id="name-iana-considerations">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-6-1">
+This document has no IANA requirement.<a href="#section-6-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<section id="section-7">
+      <h2 id="name-acknowledgments">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
+      </h2>
+<p id="section-7-1">
+The authors would like to thank Marie-Jose Montpetit, Francois Michel, and Oumaima Attia for their valuable contributions to the IETF Hackathon SWiF-Codec project and their inputs to this document.<a href="#section-7-1" class="pilcrow">¶</a></p>
+</section>
+<section id="section-8">
+      <h2 id="name-references">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<section id="section-8.1">
+        <h3 id="name-normative-references">
+<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+      <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc2119">https://www.rfc-editor.org/info/rfc2119</a>&gt;</span>. </dd>
+</dl>
+</section>
+<section id="section-8.2">
+        <h3 id="name-informative-references">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="fecframe-ext">[fecframe-ext]</dt>
+        <dd>
+<span class="refAuthor">Roca, V.</span><span class="refAuthor"> and A. Begen</span>, <span class="refTitle">"Forward Error Correction (FEC) Framework Extension to Sliding Window Codes"</span>, <span class="seriesInfo">Transport Area Working Group (TSVWG) draft-ietf-tsvwg-fecframe-ext (Work in Progress)</span>, <time datetime="2018-06">June 2018</time>, <span>&lt;<a href="https://tools.ietf.org/html/draft-ietf-tsvwg-fecframe-ext">https://tools.ietf.org/html/draft-ietf-tsvwg-fecframe-ext</a>&gt;</span>. </dd>
+<dt id="RLC">[RLC]</dt>
+      <dd>
+<span class="refAuthor">Roca, V.</span><span class="refAuthor"> and B. Teibi</span>, <span class="refTitle">"Sliding Window Random Linear Code (RLC) Forward Erasure Correction (FEC) Scheme for FECFRAME"</span>, <span class="seriesInfo">Transport Area Working Group (TSVWG) draft-ietf-tsvwg-rlc-fec-scheme (Work in Progress)</span>, <time datetime="2018-06">June 2018</time>, <span>&lt;<a href="https://tools.ietf.org/html/draft-ietf-tsvwg-rlc-fec-scheme">https://tools.ietf.org/html/draft-ietf-tsvwg-rlc-fec-scheme</a>&gt;</span>. </dd>
+</dl>
+</section>
+</section>
+<div id="authors-addresses">
+<section id="section-appendix.a">
+      <h2 id="name-authors-addresses">
+<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Vincent Roca</span></div>
+<div dir="auto" class="left"><span class="org">INRIA</span></div>
+<div dir="auto" class="left"> <span class="locality">Univ. Grenoble Alpes</span>
+</div>
+<div dir="auto" class="left"><span class="country-name">France</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:vincent.roca@inria.fr" class="email">vincent.roca@inria.fr</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Jonathan Detchart</span></div>
+<div dir="auto" class="left"><span class="org">ISAE - Supaero</span></div>
+<div dir="auto" class="left"><span class="country-name">France</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:jonathan.detchart@isae-supaero.fr" class="email">jonathan.detchart@isae-supaero.fr</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Cedric Adjih</span></div>
+<div dir="auto" class="left"><span class="org">INRIA</span></div>
+<div dir="auto" class="left"><span class="country-name">France</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:cedric.adjih@inria.fr" class="email">cedric.adjih@inria.fr</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Morten V. Pedersen</span></div>
+<div dir="auto" class="left"><span class="org">Steinwurf ApS</span></div>
+<div dir="auto" class="left"><span class="country-name">Denmark</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:morten@steinwurf.com" class="email">morten@steinwurf.com</a>
+</div>
+</address>
+</section>
+</div>
+<script>var toc = document.getElementById("toc");
+var tocToggle = toc.querySelector("h2");
+var tocNav = toc.querySelector("nav");
+
+// mobile menu toggle
+tocToggle.onclick = function(event) {
+    if (window.innerWidth < 1024) {
+ var tocNavDisplay = tocNav.currentStyle ? tocNav.currentStyle.display : getComputedStyle(tocNav, null).display;
+ if (tocNavDisplay == "none") {
+     tocNav.style.display = "block";
+ } else {
+     tocNav.style.display = "none";
+ }
+    }
+}
+
+// toc anchor scroll to anchor
+tocNav.addEventListener("click", function (event) {
+    event.preventDefault();
+    if (event.target.nodeName == 'A') {
+ if (window.innerWidth < 1024) {
+     tocNav.style.display = "none";
+ }
+ var href = event.target.getAttribute("href");
+ var anchorId = href.substr(1);
+ var anchor =  document.getElementById(anchorId);
+ anchor.scrollIntoView(true);
+ window.history.pushState("","",href);
+    }
+});
+
+// switch toc mode when window resized
+window.onresize = function () {
+    if (window.innerWidth < 1024) {
+ tocNav.style.display = "none";
+    } else {
+ tocNav.style.display = "block";
+    }
+}
+</script>
+</body>
+</html>
